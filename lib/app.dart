@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/app_theme.dart';
+
 class MuslimGuiderProApp extends StatelessWidget {
   const MuslimGuiderProApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Muslim Guider Pro',
-      home: Scaffold(body: Center(child: Text('Booting…'))),
+      theme: AppTheme.dark,
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      home: const Scaffold(body: Center(child: Text('Booting…'))),
     );
   }
 }
