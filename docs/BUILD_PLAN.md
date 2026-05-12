@@ -9,7 +9,7 @@
 | Created | 2026-05-13 |
 | Owner | Project owner (issuer of the RFQ) |
 | Status | Draft v1 — pending owner review |
-| Target | Lean MVP shippable in ~12 weeks; ecosystem hooks reserved but not built |
+| Target | v1 covers all 36 prototype screens; frontend-first (~10 wk) → backend (~9 wk) → launch (~2 wk); ecosystem hooks reserved but Phase 2-7 features unbuilt |
 
 ---
 
@@ -34,52 +34,77 @@ These are the foundational choices already made by the owner. They drive every s
 | D1 | **Owner is also the RFQ issuer** — can override MUST HAVEs at will | The RFQ exists; the owner authors the build plan from it | n/a |
 | D2 | **Flutter (Dart) for all clients** — Android, iOS, Web | One codebase, faster iteration, owner-acceptable tradeoffs | Yes — overrides AND-001, IOS-001, AND-002, IOS-002, IOS-011, etc. |
 | D3 | **Drop Smart TV from Phase 1 entirely** | No tvOS via Flutter; defer Smart TV to a dedicated future phase | Yes — drops RFQ §3.3 |
-| D4 | **Lean MVP first; 7-pillar hooks reserved but unbuilt** | Ship in ~12 weeks; defer multi-region, full 4-layer verification, etc. | Reshape — phases the RFQ into MVP + later |
+| D4 | **7-pillar fields reserved in schema, but only Phase 1 features built in v1** | Phases 2-7 are out of scope, but their reserved user-schema fields are present from day 1 so no migration is needed when those phases activate | Reshape — phases 2-7 features deferred while honoring the RFQ's "7-pillar forward-compat" requirement |
 | D5 | **Firebase** for backend (Firestore + Auth + Functions + FCM + Storage) | Lowest day-1 friction; managed services; good Flutter support | Yes — RFQ §6.2 calls for AWS Aurora + Keycloak + EKS |
 | D6 | **AWS Chime SDK** for WebRTC streaming, via Flutter platform channels | RFQ-recommended streaming stack; owner accepts SDK-gap cost | Partial — Chime is in RFQ; Flutter integration is non-RFQ |
+| D7 | **Frontend-first sequencing** — build all UI screens with mocks before any backend integration | Owner directive (2026-05-13): visual product reviewable end-to-end before backend cost is committed; same codebase swaps mocks for real APIs in Phase B | n/a |
+| D8 | **All 36 prototype screens ship in v1** — same codebase, mocks now → real APIs later | Owner directive (2026-05-13): the prototype is the v1 product, not the v2 target | Reshape — moves QR scans, replay, scheduled broadcasts, and Smart TV mobile-pairing UI from "deferred" into v1 |
 
 ---
 
-## 2. Scope: MVP vs Full Phase 1
+## 2. Scope: what ships in v1
 
-### 2.1 In scope for MVP (v1)
+### 2.1 In scope for v1 (all 36 prototype screens, fully backed)
 
-- Flutter app shell (Android + iOS + Web) with theming, routing, lint, CI/CD
-- Firebase Auth (email/password + Google sign-in + Apple sign-in)
-- Canonical user profile in Firestore (with reserved fields for Phases 2–7)
-- Masjid registry (institution profile, geo-coordinates, prayer schedule)
-- Proximity engine (geohash-based nearest-Masjid lookup)
-- Prayer times calculation (on-device, Adhan algorithms: Umm Al-Qura, ISNA, MWL, Egyptian, Karachi)
-- Simplified verification (admin-driven approval — full 4-layer chain deferred to v2)
-- Live Athan broadcast via AWS Chime SDK (one-way audio: Muadhin → many listeners)
-- Push notifications via FCM (prayer time reminders, Athan start alerts)
-- Biometric auth (FaceID / TouchID / Android BiometricPrompt)
-- Admin web dashboard (Flutter Web — manage Masjids, approve broadcasters, view streams)
-- Crash reporting (Firebase Crashlytics) + analytics (Firebase Analytics)
-- Single Firebase project deployment (US-Central region as default)
+**Frontend (Phase F):**
 
-### 2.2 Deferred to a v2 milestone after MVP launch
+- All 36 screens from `prototype/` recreated in Flutter (Android + iOS + Web)
+- Full design system per §4 — theme tokens, ornament widgets (orb, waveform, live pill, glass card, hero gradient, arabesque, octagonal star), iconography
+- Mock data layer (Riverpod + repository pattern) covering every screen's state needs
+- Localisation pipeline (English + Arabic, RTL-ready)
+- Mock-driven happy paths AND error states for every flow (sign-in failures, stream reconnects, QR scan outside radius, etc.)
 
-- Full 4-Layer Verification (Imam → Muadhin → 20 community QR scans inside geofence)
-- Stream recording / archive
-- Webhook outbound events for Masjid integrators
-- TURN/STUN tuning for enterprise/school firewalls
-- Adaptive bitrate to 8kbps (Chime handles bitrate; we just expose the controls)
+**Backend (Phase B):**
+
+- Firebase Auth (email/password + Google + Apple) with biometric unlock (`local_auth`)
+- Canonical user profile in Firestore with reserved fields for Phases 2–7
+- Masjid registry (Firestore + geohash via `geoflutterfire_plus`) with self-registration + admin approval
+- **Full 4-Layer Verification** (no simplification):
+  - Layer 1: Board self-registers Masjid
+  - Layer 2: Imam (or platform admin) certifies the institution
+  - Layer 3: Imam nominates Muadhin
+  - Layer 4: 20 community QR scans inside geofenced Masjid radius
+- Live Athan broadcast via AWS Chime SDK + Flutter platform channels (one-way audio: Muadhin → many listeners)
+- Broadcast recording → S3 → replay playback (the `replay-player` screen is real, not a mock)
+- Scheduled broadcasts (Cloud Scheduler triggers Cloud Function)
+- Smart TV pairing API (mobile-side pairing UI ships; actual TV apps still deferred to Phase 1.x)
+- Prayer times (on-device Adhan calculation, 6 algorithms)
+- Push notifications (FCM topics for followed Masjids; scheduled local notifications)
+- Admin web dashboard (Flutter Web — Masjid + Muadhin moderation, stream monitor, audit log)
+- Crashlytics + Analytics + cost monitoring + budget alerts
+- Single Firebase region (US-Central) at v1 launch
+
+**Launch (Phase L):**
+
+- App Store + Google Play submissions
+- TestFlight + Google Play internal track beta with ~20 testers
+- 7-day pilot with 5 Masjids before public beta
+
+### 2.2 Deferred to Phase 1.x (post-v1 incremental)
+
+- **Smart TV applications** (Android TV + Apple TV — Masjid Mode + Home Mode). Only the mobile-side pairing UI ships in v1.
+- Multi-region Chime deployment for <500ms global latency (v1 ships single-region with <1.5s target)
+- TURN/STUN tuning for restrictive corporate/school networks
+- Webhook outbound events for Masjid-integrators
+- Adaptive bitrate down to 8kbps (Chime handles bitrate adaptation; v1 doesn't expose the controls)
 - TOTP MFA (biometric covers the MFA need for v1)
-- Audit log immutability via append-only Firestore + security rules
 
-### 2.3 Deferred to a later Phase (1.x or Phase 2+)
+### 2.3 Deferred to Phase 2+ (triggered by ecosystem expansion)
 
-- Smart TV apps (Android TV + Apple TV / Masjid Mode + Home Mode) — *Phase 1.x*
-- Self-hosted Keycloak / EKS migration — *triggered by Phase 2 onset*
-- Postgres + PostGIS migration — *triggered by Phase 2 (Tazkiya) or Phase 3 (AnsApp)*
+- Self-hosted Keycloak / EKS migration — *triggered by Phase 2 (Tazkiya) onset*
+- Postgres + PostGIS migration from Firestore — *triggered by Phase 2 or Phase 3 (AnsApp)*
 - GraphQL API gateway — *Phase 2+*
-- Multi-region cloud deployment + IaC (Terraform/CDK) — *pre-launch hardening*
-- 10,000+ concurrent listener load testing — *pre-launch hardening*
-- Third-party penetration test — *pre-launch hardening*
-- WCAG 2.1 AA audit, Arabic localisation polish — *pre-launch hardening*
+- Multi-region cloud deployment + full IaC (Terraform/CDK) — *triggered by 100k+ MAU*
+- Graph database (Neo4j or `pg_graphql`) for AnsApp — *Phase 3 trigger*
 
-### 2.4 Explicitly out of scope
+### 2.4 Pre-launch hardening (required before public marketing push)
+
+- 10,000+ concurrent listener load test
+- Third-party penetration test (no Critical/High unresolved)
+- WCAG 2.1 AA accessibility audit
+- Arabic localisation review by native speaker
+
+### 2.5 Explicitly out of scope
 
 - Phases 2–7 features (Tazkiya, AnsApp, LocalMotion, Sunnah Marriage, Hiring & Services, Decentralised Finance)
 - Content moderation of live audio streams
@@ -135,233 +160,524 @@ These are the foundational choices already made by the owner. They drive every s
 
 ### Why this shape
 
-- **One backend control plane (Firebase) for auth + data + functions + push** — minimises moving parts for an MVP.
+- **One backend control plane (Firebase) for auth + data + functions + push** — minimises moving parts.
 - **AWS Chime as a separate audio plane** — only invoked when a broadcast starts/joins. Firebase orchestrates; Chime delivers audio. Backend cost stays predictable.
 - **Native platform channels live in a single Dart-facing module** (`lib/streaming/`) so the rest of the app stays Flutter-pure.
 
 ---
 
-## 4. Module decomposition
+## 4. Design system (derived from `prototype/`)
 
-Eight modules. Build order is strict — each module unblocks the next. Estimated efforts assume one experienced full-stack Flutter dev plus part-time backend support.
+The visual system is fully fleshed out in [`prototype/`](../prototype/) — 36 HTML mockups browseable via `prototype/index.html`. **The prototype is the canonical visual spec**: when this build plan disagrees with a prototype screen on layout, copy, or styling, the prototype wins.
 
-| # | Module | Depends on | Effort | Ships value? |
+This section extracts the design tokens from the prototype's Tailwind config and maps them to a Flutter theme. The module-screen-coverage table at the end (§4.7) shows which Phase F module owns each prototype category.
+
+### 4.1 Color tokens
+
+Extracted from the Tailwind config in every prototype screen. These map to `ColorScheme` + an `AppColors` theme extension in Flutter.
+
+**Brand & primary (gold/amber)**
+
+| Token | Hex | Flutter mapping | Usage |
+|---|---|---|---|
+| `primary` | `#f2c050` | `colorScheme.primary` | Brand gold — buttons, accents, prayer-time highlight |
+| `primary-container` | `#d4a537` | `colorScheme.primaryContainer` | Filled card backgrounds |
+| `on-primary` | `#402d00` | `colorScheme.onPrimary` | Text on gold |
+| `primary-fixed` | `#ffdf9f` | extension | Soft gold backgrounds |
+| `gold-highlight` | `#F0C75E` | extension | Live-broadcast orb glow, headline accents |
+| `gold-deep` | `#8B6914` | extension | Deep gold for gradients and shadow |
+| `inverse-primary` | `#795900` | extension | Inverted-surface accent |
+
+**Surfaces**
+
+| Token | Hex | Usage |
+|---|---|---|
+| `background` / `surface` | `#17130c` | App background (warm dark brown) |
+| `bg-deep-night` | `#0F1626` | Hero gradients, splash, live player |
+| `bg-elevated` | `#1A2238` | Elevated cards, list items |
+| `surface-card` | `#232C44` | Default card background (most common) |
+| `surface-container` | `#231f17` | Tonal surface 1 |
+| `surface-container-high` | `#2e2921` | Tonal surface 2 |
+| `surface-container-highest` | `#39342b` | Tonal surface 3 |
+| `surface-inset` | `#2D3658` | Progress-bar tracks, inset wells |
+
+**Ink (text)**
+
+| Token | Hex | Usage |
+|---|---|---|
+| `ink-primary` | `#FFFFFF` | Primary text on dark |
+| `on-surface` / `on-background` | `#ebe1d4` | Default body text (warm white) |
+| `ink-muted` | `#A8B0C4` | Secondary text |
+| `ink-subtle` | `#6B7280` | Tertiary / disabled text |
+| `on-surface-variant` | `#d2c5b0` | Captions on cards |
+
+**Semantic & status**
+
+| Token | Hex | Usage |
+|---|---|---|
+| `live-red` | `#FF6B6B` | Live-broadcast indicator |
+| `live-red-bg` | `#3D1A1A` | Live-pill background |
+| `success-green` | `#4ADE80` | Verification confirmed |
+| `success-green-bg` | `#1A3D2A` | Success pill background |
+| `warning-amber` | `#FFA94D` | Pending verification |
+| `warning-amber-bg` | `#3D2F0F` | Warning pill background |
+| `error` | `#ffb4ab` | Error text |
+| `error-container` | `#93000a` | Error pill background |
+| `maghrib-orange` | `#E8763A` | Sunset / Maghrib prayer accent |
+| `info-blue` | `#4FC3D9` | Informational chips |
+| `purple-deep` | `#5B2C9F` | Hero gradient secondary |
+| `secondary` / `secondary-fixed-dim` | `#dcb8ff` | Tonal lavender accents |
+| `tertiary` | `#adc8ff` | Tertiary blue accent |
+
+**Borders & outlines**
+
+| Token | Hex | Usage |
+|---|---|---|
+| `border-low` | `#2D3658` | Subtle dividers |
+| `border-medium` | `#3A4566` | Card outlines |
+| `outline` | `#9b8f7c` | Form-control outlines |
+| `outline-variant` | `#4e4636` | Disabled outlines |
+
+### 4.2 Typography
+
+| Family | Source | Weights | Flutter mapping | Used for |
 |---|---|---|---|---|
-| M0 | Foundation: Flutter shell + Firebase project + CI/CD | — | 1 wk | No (enabler) |
-| M1 | Auth + canonical user profile | M0 | 1.5 wk | Partial (sign-in works) |
-| M2 | Masjid registry + proximity engine | M1 | 1.5 wk | Yes (find nearby Masjids) |
-| M3 | Verification workflow (MVP version) | M1, M2 | 1 wk | Yes (Masjid onboarding) |
-| M4 | Athan streaming (AWS Chime via platform channels) | M1, M2, M3 | 2 wk | **Yes (core product)** |
-| M5 | Prayer times + push notifications | M0, M2 | 1 wk | Yes (daily utility) |
-| M6 | Admin dashboard (Flutter Web) | M1, M2, M3 | 1 wk | Yes (ops self-serve) |
-| M7 | Polish + launch (analytics, store listings, manual QA) | All | 2 wk | Launch gate |
-| | **Total** | | **~11 wk** | |
+| **Instrument Sans** | Google Fonts | 400, 700 | `GoogleFonts.instrumentSans()` | Headlines (`font-headline-xl`/`-lg`/`-md`), numeral time displays |
+| **DM Sans** | Google Fonts | 400, 500, 700 | `GoogleFonts.dmSans()` | Body (`font-body-md`/`-lg`), labels (`font-label-caps`) |
+| **Material Symbols Outlined** | Google Fonts (variable) | variable | Bundle variable font as asset; use `Icon(IconData(codepoint))` or `material_symbols_icons` pkg | All icons |
+| **Noto Naskh Arabic** | Google Fonts (TBD) | 400, 500, 700 | `GoogleFonts.notoNaskhArabic()` | Arabic UI when localised (RTL) |
 
-Modules M3, M5, M6 can partially overlap in parallel once their dependencies land. Realistic calendar: **12 weeks to public beta**.
+**Type scale** (extracted from prototype):
+
+| Style | Approx size | Family | Example |
+|---|---|---|---|
+| `headline-xl` | 64px / leading-none | Instrument Sans 700 | Hero prayer countdown |
+| `headline-lg` | 28–32px | Instrument Sans 700 | Page titles |
+| `headline-md` | 18–20px | Instrument Sans 700 | Card titles, masjid names |
+| `body-lg` | 14px | DM Sans 400/500 | List rows, primary text |
+| `body-md` | 13px | DM Sans 400 | Secondary text |
+| `label-caps` | 10–11px | DM Sans 500 uppercase, `tracking-[0.2em]` | Pills, chip labels, section eyebrows |
+| `numeral-time` | tabular-nums | Instrument Sans | Prayer-time displays |
+
+### 4.3 Spacing & radii
+
+| Token | Value | Usage |
+|---|---|---|
+| `unit` | 4px | Base spacing unit |
+| `gutter` | 16px | Inter-element gap |
+| `section-gap` | 24px | Between content sections |
+| `container-margin` | 20px | Screen-edge padding |
+| `card-padding` | 16px | Default card inner padding |
+| `radius.DEFAULT` | 4px | |
+| `radius.lg` | 8px | |
+| `radius.xl` | 12px | Most cards |
+| `radius.21` | 21px | Hero cards (custom — `rounded-[21px]` recurs throughout) |
+| `radius.full` | 9999px | Pills, chips, avatars |
+
+### 4.4 Motifs & ornamentation
+
+These recurring visual elements give the app its Islamic character. They must be reproduced faithfully in Flutter:
+
+1. **Arabesque pattern** — small repeating SVG (8-pointed star, gold at 8% opacity). Inline source visible in `prototype/screens/smart-tv-pairing.html`. Use behind hero sections and modals — implement as a tiled `Image.asset` or `CustomPainter`.
+2. **Octagonal star frame** — 8-point clip-path surrounding the live audio orb (`live-player-masjid-al-abrar.html`). CSS: `polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)`. In Flutter: `ClipPath` with a custom `OctagonalStarClipper` or a `CustomPainter` for the outlined version.
+3. **Gold orb visualizer** — radial gradient from `gold-highlight` through `primary` to `gold-deep`, with a soft inset highlight at 30% 30%, surrounded by two faint expanding rings. The orb pulses during live broadcast. Implement as an `AnimatedBuilder` widget.
+4. **Audio waveform bars** — ~44 vertical bars (1.5px wide, heights 4–14px), alternating between `primary` and `ink-primary`. Used during live playback. In Phase F: a fixed-amplitude animated visualizer driven by a periodic `AnimationController`. In Phase B: real amplitude data from the Chime SDK if exposed; otherwise the synthetic visualizer stays.
+5. **Live pill** — small rounded chip, pulsing red dot, `live-red` text on `live-red-bg` — often shows latency in ms ("LIVE · 428 ms"). Used on player, broadcaster dashboard, and home cards.
+6. **Glass surfaces** — `backdrop-blur-xl` cards over patterned backgrounds. Flutter: `BackdropFilter(filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20))` inside a `ClipRRect`.
+7. **Subtle gold border** — cards commonly use `border-primary/10` (10% gold). In Flutter: `Border.all(color: AppColors.primary.withOpacity(0.1), width: 1)`.
+8. **Hero gradient** — `bg-gradient-to-br from-purple-deep to-bg-deep-night`. The recurring hero treatment (next-prayer card, splash, live player). Build as a reusable `HeroGradient` widget.
+
+### 4.5 Iconography
+
+- **Material Symbols Outlined** (variable font) is the entire icon set. The prototype uses both outlined and filled variants intentionally (filled for "active/on" states via `font-variation-settings: 'FILL' 1`).
+- Flutter approach: bundle the Material Symbols variable font as an asset and use `Icon(IconData(codepoint, fontFamily: 'MaterialSymbols'))`, OR use the community package `material_symbols_icons`.
+- Common symbols used: `mosque`, `verified`, `grade`, `expand_more`, `arrow_back`, `pause`, `play_arrow`, `qr_code_scanner`, `wifi`, `notifications`, `settings`, `location_on`, `schedule`, `volume_up`, `mic`.
+
+### 4.6 Flutter wiring
+
+Single source of design tokens in `lib/theme/`:
+
+```
+lib/theme/
+  app_colors.dart       # Static const Color values for every token above
+  app_typography.dart   # TextStyle constants for each font-* token
+  app_spacing.dart      # Padding/gap constants (unit, gutter, section_gap, ...)
+  app_radii.dart        # BorderRadius constants
+  app_theme.dart        # ThemeData (dark) wiring ColorScheme + TextTheme + extensions
+  ornaments/
+    arabesque_painter.dart       # CustomPainter for the repeating motif
+    octagonal_star_clipper.dart  # ClipPath + decorative border
+    gold_orb.dart                # Animated orb widget
+    audio_waveform.dart          # Animated bars
+    hero_gradient.dart           # Reusable BoxDecoration
+    live_pill.dart               # Pulsing live indicator with optional latency
+    glass_card.dart              # BackdropFilter card primitive
+```
+
+The app is **dark-by-default**. A light theme is not part of v1 — the prototype doesn't define one. If the admin dashboard needs light surfaces later, that's a separate workstream.
+
+### 4.7 Prototype → module coverage
+
+Per decision D8, **all 36 prototype screens ship in v1.** Each Phase F module owns one prototype category — there are no "parked" screens at the v1 level (Smart TV apps themselves are Phase 1.x, but the mobile-side `smart-tv-pairing` screen ships in F4).
+
+| F-module | Prototype category | Screens (count) |
+|---|---|---|
+| **F3 Onboarding & Auth** | Onboarding & Auth | 10 — `splash-screen`, `onboarding-welcome`, `onboarding-proximity`, `onboarding-verified`, `permissions-bundle`, `language-region-selection`, `sign-in-centered-variant`, `create-account-step-1/2/3` |
+| **F4 Listener** | Listener | 14 — `home-prayer-widget`, `home-listener`, `nearby-masjids`, `search-results-nearby`, `masjid-detail`, `live-player-masjid-al-abrar`, `replay-player-masjid-al-abrar`, `stream-ended-state`, `stream-reconnecting-state`, `prayer-schedule-birmingham`, `inbox`, `profile`, `settings`, `smart-tv-pairing` |
+| **F5 Broadcaster** | Broadcaster | 7 — `home-prayer-widget-muadhin`, `masjid-dashboard-muadhin`, `go-live-pre-broadcast-check`, `live-broadcast-masjid-al-abrar`, `schedule-broadcast-muadhin`, `broadcast-summary-masjid-al-abrar`, `audit-log-muadhin` |
+| **F6 Verification** | Verification | 5 — `qr-scan-masjid-al-abrar`, `qr-scan-success`, `qr-scan-error-outside-radius`, `verification-status-masjid-al-abrar`, `verification-history` |
+
+**Total:** 36 screens. The admin web dashboard (built in B-phase, not F-phase) does not have prototype mockups — it derives from the same design tokens.
+
+The `live-athan-masjid-companion`, `onboarding-auth-flow-compact`, `prayer-schedule-birmingham-compact` HTML files in `prototype/screens/` are variants not registered in `prototype/index.html` — treated as design alternatives, not separate work.
 
 ---
 
-## 5. Module details
+## 5. Phase structure (frontend-first)
 
-### M0 — Foundation (1 week)
+Per decision D7, work is sequenced into three phases. Phase F builds the entire Flutter frontend with mock data. Phase B replaces mock repository implementations with real Firebase + AWS Chime + Cloud Functions backends. Phase L hardens, polishes, and launches.
 
-**Goal:** project skeleton + automation pipeline so every subsequent module ships green.
+```
+   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+   │   PHASE F    │ ─→ │   PHASE B    │ ─→ │   PHASE L    │
+   │  Frontend    │    │   Backend    │    │   Launch     │
+   │  + mocks     │    │  integration │    │              │
+   │              │    │              │    │              │
+   │  ~10 weeks   │    │  ~9 weeks    │    │   ~2 weeks   │
+   │  36 screens  │    │ Mocks → APIs │    │ Stores + beta│
+   └──────────────┘    └──────────────┘    └──────────────┘
+```
+
+### 5.1 Phase F modules (frontend with mocks)
+
+| # | Module | Depends on | Effort | Output |
+|---|---|---|---|---|
+| F0 | Foundation: Flutter scaffold + lint + CI + `go_router` skeleton | — | 1 wk | App boots; CI green; all 36 routes navigable to placeholders |
+| F1 | Design system + ornament widgets (`lib/theme/` per §4) | F0 | 1.5 wk | Reusable theme + 6 ornament widgets + showcase route |
+| F2 | Mock data layer + Riverpod state management | F0 | 1 wk | Repository interfaces + fake impls + fixtures |
+| F3 | Onboarding & Auth screens (10 prototype screens) | F1, F2 | 1.5 wk | Splash, onboarding, sign-in, create-account flow |
+| F4 | Listener screens (14 prototype screens) | F1, F2 | 2.5 wk | Home, nearby, masjid detail, live/replay player, prayer schedule, profile, settings, Smart TV pairing UI |
+| F5 | Broadcaster screens (7 prototype screens) | F1, F2 | 1.5 wk | Muadhin home, dashboard, pre-broadcast check, live broadcast UI, scheduled-broadcast UI, summary, audit log |
+| F6 | Verification screens (5 prototype screens) | F1, F2 | 1 wk | QR scan camera flow, success/error states, verification status, history |
+| F7 | Frontend QA + design review | F3-F6 | 0.5 wk | Pixel-parity pass against prototype + owner sign-off |
+| | **Phase F total** | | **~10 wk** | **All 36 screens running on real devices, no backend** |
+
+### 5.2 Phase B modules (backend integration)
+
+| # | Module | Depends on | Effort | Output |
+|---|---|---|---|---|
+| B0 | Firebase project + environment setup (dev/staging/prod) | Phase F complete | 0.5 wk | Three Firebase projects provisioned; AWS Chime IAM set up |
+| B1 | Auth + user profile backend (swap repos → Firebase Auth + Firestore) | B0 | 1 wk | Real sign-in, real profiles |
+| B2 | Masjid registry + proximity backend | B1 | 1 wk | Real Firestore + geohash queries |
+| B3 | Verification (full 4-Layer) backend | B2 | 1.5 wk | Cloud Functions for all 4 layers, QR validation, geofence enforcement |
+| B4 | Streaming backend (AWS Chime + native platform channels) | B2 | 2.5 wk | Real WebRTC audio, broadcaster + listener |
+| B5 | Prayer times + notifications backend | B1 | 1 wk | FCM topic subs, scheduled push |
+| B6 | Auxiliary backends: recording, scheduled broadcasts, Smart TV pairing API | B4 | 1 wk | Chime recording → S3, Cloud Scheduler triggers, TV pairing codes |
+| B7 | Backend integration testing | B1–B6 | 0.5 wk | All mock impls swapped; smoke test green |
+| | **Phase B total** | | **~9 wk** | **Real APIs powering all 36 screens** |
+
+### 5.3 Phase L modules (launch)
+
+| # | Module | Effort | Output |
+|---|---|---|---|
+| L0 | Polish + analytics + crashlytics + monitoring | 1 wk | Analytics events, Crashlytics, security rules audit, cost alerts |
+| L1 | Store submissions + beta + bug bash | 1 wk | Apple + Google submissions; TestFlight + Play Internal; 7-day pilot |
+| | **Phase L total** | **~2 wk** | **Public beta live** |
+
+### 5.4 Total project
+
+**~21 weeks** of net effort. With buffer for holidays, sick days, and unknown unknowns, plan for **24-26 weeks** calendar time.
+
+**Parallelism:** Phase F has limited parallelism (F1 + F2 can overlap with each other; F3-F6 require F1+F2 to land). Phase B can parallelise B3, B4, B5 once B2 lands.
+
+---
+
+## 6. Module details
+
+> **Reading guide:** Phase F (frontend, with mocks) gets detailed deliverables because that's what's happening first. Phase B (backend integration) is summarised — full backend specs become their own per-module docs when Phase B begins.
+
+---
+
+### Phase F — Frontend with mocks
+
+#### F0 — Foundation (1 week)
+
+**Goal:** project skeleton + automation pipeline so every subsequent module ships green. No backend dependencies yet.
 
 **Deliverables:**
-- Flutter project scaffold (already done — Android + iOS + Web targets)
-- Firebase project created (dev, staging, prod environments)
-- `firebase_core`, `firebase_auth`, `cloud_firestore`, `cloud_functions`, `firebase_messaging`, `firebase_analytics`, `firebase_crashlytics`, `firebase_storage` integrated
-- Riverpod state management wired (`flutter_riverpod`, `riverpod_generator`)
-- Routing with `go_router`
-- Theming (light + dark, Material 3, accessible contrast, RTL-aware)
-- Localisation pipeline (`flutter_localizations` + `intl`) — English + Arabic placeholders
-- Strict lint (`very_good_analysis` or `flutter_lints` + custom rules)
-- Folder convention: feature-first (`lib/features/{auth,masjid,prayer,streaming,verification,admin}/`)
+- Flutter project scaffold (already done — Android + iOS + Web targets, `com.muslimguider` org)
+- Folder convention:
+  - `lib/features/{onboarding,auth,listener,broadcaster,verification,admin,common}/screens/`
+  - `lib/theme/` (filled in F1)
+  - `lib/data/{repositories,mocks,fixtures,models}/` (filled in F2)
+- Routing skeleton with `go_router` — empty placeholder widgets at all 36 routes
+- Riverpod 2.x state management: `flutter_riverpod`, `riverpod_generator`, `freezed` for state classes, `riverpod_lint`
+- Localisation pipeline (`flutter_localizations` + `intl`) — English + Arabic placeholder ARB files; RTL detection wired
+- Strict lint (`very_good_analysis: ^6.x`) + `dart format` enforced in CI
 - GitHub Actions CI: `flutter analyze`, `flutter test`, `flutter build apk --debug`, `flutter build ios --no-codesign`, `flutter build web`
 - Pre-commit hook running `dart format` and `flutter analyze`
+- `README.md` at `lib/` root explaining folder convention
+- **No Firebase, no AWS dependencies yet** — F0 explicitly forbids backend SDK imports
 
 **Acceptance:**
-- Empty app launches on Android, iOS simulator, and web in dev
+- All 36 routes navigable via `go_router` (each shows a placeholder with the route name)
 - CI runs green on a no-op PR
-- `flutter analyze` has zero issues
+- `flutter analyze` has zero issues on the empty scaffold
+- App boots on Android emulator, iOS simulator, and Chrome
 
-### M1 — Auth + canonical user profile (1.5 weeks)
+#### F1 — Design system + ornament widgets (1.5 weeks)
 
-**Goal:** users can sign up, sign in, and have a Firestore profile record that already reserves space for the 7-pillar ecosystem.
+**Goal:** every visual primitive needed to recreate the prototype lives in one tested place. After F1, screen modules consume widgets and tokens — they don't recreate them.
 
 **Deliverables:**
-- Firebase Auth: email/password, Google sign-in, Apple sign-in
-- Onboarding flow: name, country, preferred prayer-time calculation method, consent screens (GDPR, location, data sharing)
-- Biometric unlock after first sign-in (`local_auth` package)
-- Canonical Firestore user document (see §6 schema)
-- Account deletion endpoint (Cloud Function — soft-delete with `deletedAt`, hard-delete after 30 days per GDPR)
-- Profile edit screen
+- `lib/theme/app_colors.dart` — all hex tokens from §4.1 as `static const Color`
+- `lib/theme/app_typography.dart` — `TextStyle` constants for each `font-*` token in §4.2 (uses `google_fonts` package or bundled assets)
+- `lib/theme/app_spacing.dart`, `app_radii.dart` — sizing constants
+- `lib/theme/app_theme.dart` — `ThemeData` (dark) wiring `ColorScheme` + `TextTheme` + `ThemeExtension` for non-M3 tokens (gold-highlight, maghrib-orange, live-red, etc.)
+- `lib/theme/ornaments/`:
+  - `arabesque_painter.dart` — repeating 8-pointed star background, gold @ 8% opacity
+  - `octagonal_star_clipper.dart` — clip path + outlined variant
+  - `gold_orb.dart` — radial-gradient orb with animated pulse and outer rings
+  - `audio_waveform.dart` — animated bar visualizer (~44 bars, 1.5px wide, alternating heights)
+  - `live_pill.dart` — pulsing red dot + optional latency badge ("LIVE · 428 ms")
+  - `glass_card.dart` — backdrop-blur card primitive
+  - `hero_gradient.dart` — `purple-deep` → `bg-deep-night` gradient `BoxDecoration`
+- `lib/theme/showcase_screen.dart` — debug-only route that displays every ornament + every color/typography token (for visual QA against prototype)
+- Bundled fonts in `pubspec.yaml`: Instrument Sans (700), DM Sans (400/500/700), Material Symbols Outlined (variable) — OR via `google_fonts` with cache prefetching
 
 **Acceptance:**
-- Sign-up → onboarding → profile create works end-to-end on Android + iOS + Web
-- Biometric unlock works on FaceID, TouchID, Android fingerprint
-- New user document in Firestore has all reserved fields (Phase 2/3/4/7) initialised to null/defaults
+- Showcase screen renders all ornaments correctly on Android / iOS / Chrome
+- Hot-reload swap of any token in `app_colors.dart` propagates across the showcase
+- Golden tests for each ornament widget pass
+- Visual QA: side-by-side comparison of showcase vs prototype motifs — no perceivable differences
 
-### M2 — Masjid registry + proximity engine (1.5 weeks)
+#### F2 — Mock data layer + Riverpod state management (1 week)
 
-**Goal:** Masjids exist as records, and the app can find nearby ones fast.
+**Goal:** repository pattern so backend can be swapped in during Phase B without touching any screen code. After F2, the rest of Phase F never touches a mock implementation directly — only the repository interface.
 
 **Deliverables:**
-- `/masjids` Firestore collection with geohash index (`geoflutterfire_plus`)
-- Masjid self-registration flow (board member registers, status = `PENDING_VERIFICATION`)
-- Masjid profile screen (name, address, photo, schedule, "currently broadcasting" indicator)
-- Search & list: "Masjids near me" using geohash range query within radius
-- Manual Masjid selection + favouriting (user can pin preferred Masjid)
-- `User.preferredMasjidId`, `User.homeCoordinates` written on first location grant
+- Repository interfaces in `lib/data/repositories/`:
+  - `auth_repository.dart` — `signUp`, `signIn`, `signInWithGoogle`, `signInWithApple`, `signOut`, `currentUser` (stream), `biometricUnlock`, `requestOtp`, `verifyOtp`
+  - `user_repository.dart` — `getProfile`, `updateProfile`, `getPreferences`, `setPreference`
+  - `masjid_repository.dart` — `getNearby(coord, radiusKm)`, `search(query)`, `getById(id)`, `register(payload)`, `favourite(id)`, `unfavourite(id)`
+  - `stream_repository.dart` — `getActiveStreams`, `getStreamById`, `startBroadcast`, `joinBroadcast`, `endBroadcast`, `getStreamHealth`, `getReplay(streamId)`, `scheduleBroadcast`
+  - `verification_repository.dart` — `getVerificationStatus(masjidId)`, `getVerificationHistory(masjidId)`, `submitQrScan(token, coord)`, `validateGeofence(masjidId, coord)`, `generateQrToken(masjidId)`
+  - `prayer_repository.dart` — `getDailySchedule(coord, method)`, `getCalculationMethod`, `setCalculationMethod`
+  - `notification_repository.dart` — `getInbox`, `markRead(id)`, `subscribeToMasjid(id)`, `getSubscriptions`
+  - `tv_pairing_repository.dart` — `requestPairingCode`, `confirmPairing(code)`
+- Fake implementations in `lib/data/mocks/` returning hard-coded fixtures from `lib/data/fixtures/`:
+  - `users.json` — sample listener + sample Muadhin + sample admin
+  - `masjids.json` — 50 Masjids worldwide with realistic coordinates (Mecca, Medina, London, Birmingham, Jakarta, Istanbul, etc.)
+  - `streams.json` — 3 active streams + 5 past streams (with replay URLs pointing to local sample mp3s)
+  - `verification.json` — Layer 1-3 records + Layer 4 partial (19/20 scans)
+  - `audit_log.json` — 30 sample audit events
+- Riverpod providers exposing each repository — `final authRepositoryProvider = Provider<AuthRepository>((ref) => MockAuthRepository())` — easily overridable in tests and in Phase B
+- State classes via `freezed`: `AuthState`, `UserState`, `MasjidListState`, `StreamState`, `VerificationState`, `PrayerScheduleState`, etc.
+- `MockDelay` helper that simulates realistic API latency (200-800ms) so UI loading states feel real; `--dart-define MOCK_DELAY=0` skips it for fast dev
+- Failure injection: each mock has a `--dart-define MOCK_FAIL=<repo>:<method>` knob to test error states without writing per-screen test code
 
 **Acceptance:**
-- Registering a Masjid in <60 seconds on mobile
-- "Nearest 10" query returns in <500ms on a 1,000-Masjid seed dataset
-- Geohash radius search handles edge cases (180° meridian, polar regions are out of scope)
-- User can favourite a Masjid and unfavourite it
+- Every screen in F3-F6 can be powered by mocks alone, with realistic loading + error states
+- Repository interfaces are the only contract — `lib/features/**/screens/` never imports anything from `lib/data/mocks/`
+- 80%+ test coverage on repository state notifiers and `freezed` state classes
 
-**Known limitation flagged:** RFQ GEO-004 specifies `<100ms` PostGIS-grade query. Firestore + geohash will not hit that at 7-pillar scale. Documented in §10.
+#### F3 — Onboarding & Auth screens (1.5 weeks)
 
-### M3 — Verification workflow (MVP version, 1 week)
+**Goal:** all 10 Onboarding & Auth prototype screens running, with the mock auth flow producing a "signed-in" state.
 
-**Goal:** keep broadcast trust without building the full 4-layer chain on day 1.
-
-**MVP simplification of RFQ §4:**
-
-| RFQ Layer | RFQ Behaviour | MVP Behaviour |
-|---|---|---|
-| Layer 1 (Board registers Masjid) | Self-serve registration | Same — self-serve form |
-| Layer 2 (Imam certifies Masjid) | Verified Imam role required | **Platform admin manually verifies** via admin dashboard |
-| Layer 3 (Imam nominates Muadhin) | Imam-authenticated action | **Masjid owner (registrant) nominates** Muadhin; platform admin confirms |
-| Layer 4 (20 community QR scans inside geofence) | Cryptographic + geofenced | **Deferred entirely** — Muadhin is broadcast-enabled once Layer 3 confirms |
+**Screens (10):** `splash-screen`, `onboarding-welcome`, `onboarding-proximity`, `onboarding-verified`, `permissions-bundle`, `language-region-selection`, `sign-in-centered-variant`, `create-account-step-1` (email/phone), `create-account-step-2` (OTP), `create-account-step-3` (profile)
 
 **Deliverables:**
-- Verification state machine in Cloud Functions (`PENDING_*` → `ACTIVE`)
-- Admin dashboard screens for platform admins to approve/reject Masjids and Muadhins
-- Email notifications to Masjid owner on state change (via Firebase Extensions: Trigger Email)
-- Audit log entries written to `/auditLog/{eventId}` (immutable via security rules)
-- Schema reserved for Layer 4 (`/qrTokens`, `/verificationScans`) — collections created but unused
+- One file per screen under `lib/features/onboarding/screens/` and `lib/features/auth/screens/`
+- Onboarding flow controller (Riverpod `Notifier`) walks user through welcome → proximity → verified → permissions; persists "onboarded" flag to `SharedPreferences`
+- Auth flow controller branches between sign-in and create-account
+- Permissions: use `permission_handler` to actually request notifications, location, microphone permissions — match the prototype's deny states
+- Language picker: writes choice to `SharedPreferences`, updates app locale on the fly
+- OTP entry: 6-digit segmented input widget; mock auto-fills the correct OTP after 1.5s for happy path
+- Splash screen: native splash via `flutter_native_splash` + the in-app splash widget for branded loading
 
 **Acceptance:**
-- A new Masjid can be approved end-to-end by an admin in <2 minutes
-- Approved Muadhin can authenticate and reach the "Start broadcast" screen (next module enables the actual broadcast)
-- Rejected Masjid receives a notification with the reason
+- Fresh install → onboarding flow → mock sign-in or mock create-account → home (F4 placeholder)
+- Onboarded flag persists across app restart
+- Locale switch (EN ↔ AR) flips RTL correctly across all 10 screens
+- Permissions actually request OS-level permissions; denial paths render the prototype's error states
+- Side-by-side visual parity against prototype on iPhone 13 simulator + Pixel 6 emulator
 
-### M4 — Athan streaming via AWS Chime SDK (2 weeks)
+#### F4 — Listener screens (2.5 weeks)
 
-**Goal:** the core product — live, low-latency Athan broadcast from Muadhin to many listeners.
+**Goal:** all 14 Listener prototype screens, including the live player with mock audio and the Smart TV pairing flow.
 
-**This module owns the only piece of native code in the app.** Everything else is Dart.
-
-**Architecture:**
-
-```
-Muadhin's phone                                Listener's phone
-+-----------------+                            +-----------------+
-| Flutter UI      |                            | Flutter UI      |
-| "Start Athan"   |                            | "Now playing:   |
-|        |        |                            |   Masjid X"     |
-+--------+--------+                            +--------+--------+
-         |                                              |
-   MethodChannel("chime")                       MethodChannel("chime")
-         |                                              |
-+--------+--------+                            +--------+--------+
-| Native Chime SDK|                            | Native Chime SDK|
-| (Kotlin/Swift)  |                            | (Kotlin/Swift)  |
-| Publisher       |                            | Subscriber      |
-+--------+--------+                            +--------+--------+
-         |                                              ^
-         +----- AWS Chime SFU (regional) ---------------+
-                       ^
-                       |
-              (Cloud Function: createMeeting,
-               createAttendee, returns join token)
-```
+**Screens (14):** `home-prayer-widget`, `home-listener`, `nearby-masjids`, `search-results-nearby`, `masjid-detail`, `live-player-masjid-al-abrar`, `replay-player-masjid-al-abrar`, `stream-ended-state`, `stream-reconnecting-state`, `prayer-schedule-birmingham`, `inbox`, `profile`, `settings`, `smart-tv-pairing`
 
 **Deliverables:**
-- Cloud Functions: `createBroadcast(masjidId)`, `joinBroadcast(broadcastId)`, `endBroadcast(broadcastId)` — call AWS Chime APIs with server-side AWS credentials, return signed join tokens to the client
-- `/streams/{id}` Firestore doc tracking active broadcasts (`masjidId`, `muadhinId`, `startedAt`, `chimeMeetingId`, `listenerCount`)
-- Android platform channel module in `android/app/src/main/kotlin/.../StreamingPlugin.kt` wrapping `amazon-chime-sdk-android` artifact
-- iOS platform channel module in `ios/Runner/StreamingPlugin.swift` wrapping `AmazonChimeSDK` pod
-- Flutter-side facade (`lib/streaming/streaming_service.dart`) hiding the platform-channel calls behind a clean Dart API
-- Listener UI: live indicator, current Masjid name, audio level meter, manual mute/unmute, retry logic on disconnect
-- Broadcaster UI: pre-broadcast checklist (mic permission, network OK), big "Start broadcast" button, broadcast duration timer, big "End broadcast" button
-- Background audio: `audio_service` package wired so listeners can lock the screen and audio continues
-- FCM push when a followed Masjid starts broadcasting
+- One file per screen under `lib/features/listener/screens/`
+- Bottom navigation (home / search / inbox / profile) — visible only on the screens that show it in the prototype
+- Mock audio playback: the `audio_waveform` widget animates from a synthetic amplitude curve; a "mock playing" state controls the visualizer
+- Reconnect / ended states reachable via dev menu (no real network errors yet)
+- Smart TV pairing screen renders a QR code from a mock pairing service that returns a fake 6-digit code after 1s
+- Settings page wires all real local preferences (theme, language, calculation method, notification toggles) — even without backend, they persist via `SharedPreferences`
+- Profile page renders the mock user fixture from F2
+- Replay player has a scrubber + play/pause controlling the orb state
 
 **Acceptance:**
-- One Muadhin can broadcast to ≥10 listeners simultaneously on staging
-- End-to-end latency <1.5s on a same-region test (RFQ STR-001 demands <500ms; we accept the gap for MVP — see §10)
-- Audio survives screen lock, app backgrounding, and incoming call interruption
-- Network drop → automatic reconnection within 5 seconds
+- All 14 screens reachable through a real navigation flow (not just dev menu)
+- Live player: orb pulses, waveform animates, latency badge updates with mock values
+- Pixel parity against prototype: side-by-side spot-check of all 14 screens with owner at week's end
 
-### M5 — Prayer times + push notifications (1 week)
+#### F5 — Broadcaster screens (1.5 weeks)
 
-**Goal:** even when no Masjid is broadcasting, the app is useful daily.
+**Goal:** all 7 Broadcaster prototype screens, with a mock broadcast lifecycle that runs end-to-end.
+
+**Screens (7):** `home-prayer-widget-muadhin`, `masjid-dashboard-muadhin`, `go-live-pre-broadcast-check`, `live-broadcast-masjid-al-abrar`, `schedule-broadcast-muadhin`, `broadcast-summary-masjid-al-abrar`, `audit-log-muadhin`
 
 **Deliverables:**
-- On-device prayer time calculation using `adhan` Dart package
-- Method selector (Umm Al-Qura, ISNA, MWL, Egyptian, Karachi, Moonsighting Committee, default by country)
-- Daily prayer schedule screen + widget-ready provider state
-- Hijri date display (`hijri` package)
-- Local notifications (`flutter_local_notifications`) 5-10 mins before each prayer + at iqama time
-- FCM topic subscriptions: `masjid_{id}_athan_start` for followed Masjids
-- "Test notification" button in settings (helps users debug their notification permissions)
+- One file per screen under `lib/features/broadcaster/screens/`
+- Mock broadcast lifecycle: tap "Start broadcast" → 3-2-1 countdown → simulated 5-minute broadcast → "End" button → mock summary screen with fake listener count, duration, peak-listeners chart
+- Pre-broadcast checklist verifies mic permission (real), network reachability (`connectivity_plus`), and a mocked "Layer 4 verified" state from the verification repo
+- Schedule broadcast: date+time picker writes to mock state; entry appears on the dashboard's "Upcoming" list
+- Audit log displays mock entries from F2 fixtures
 
 **Acceptance:**
-- Daily prayer times match a known reference (e.g., IslamicFinder) within 1 minute for 3 sample cities (Mecca, London, Jakarta)
-- Notifications fire when scheduled even with the app closed (tested on real devices, not just emulator)
-- Hijri date is accurate
+- Full mock broadcast flow runs end-to-end without any backend
+- Schedule entry appears on dashboard after creation; can be edited and cancelled
+- All 7 screens pixel-match prototype
 
-### M6 — Admin dashboard (1 week)
+#### F6 — Verification screens (1 week)
 
-**Goal:** ops self-service so the owner isn't manually editing Firestore.
+**Goal:** all 5 Verification prototype screens, with mock QR-scan + geofence flow that exercises both success and failure UIs.
 
-**Built as Flutter Web** so it shares the Riverpod state, models, and Firestore queries with the mobile app — admin screens are just additional `go_router` routes only available to users with `platformRole == 'ADMIN'`.
+**Screens (5):** `qr-scan-masjid-al-abrar`, `qr-scan-success`, `qr-scan-error-outside-radius`, `verification-status-masjid-al-abrar`, `verification-history`
 
 **Deliverables:**
-- Login (reusing Firebase Auth + role check)
-- Masjid moderation queue (approve / reject pending Masjids)
-- Muadhin moderation queue (confirm Layer 3 nominations)
-- Active streams monitor (listener counts, latency, "kill stream" action)
-- User search + role assignment
-- Audit log viewer (read-only)
-- Platform config panel (e.g., default radius for proximity, future-Layer-4 threshold values)
+- One file per screen under `lib/features/verification/screens/`
+- QR scanner uses `mobile_scanner` package; the mock decoder accepts any QR but routes to success/error based on a dev toggle (real QR validation lands in B3)
+- Geofence simulation: dev menu toggle switches between "inside radius" and "outside radius" to render the error variant
+- Verification status screen shows the 4-layer chain with progress bars (mock: layers 1-3 complete, layer 4 at 19/20)
+- Verification history is a chronological list of mock events
 
 **Acceptance:**
-- Non-admin users redirected away from `/admin/*` routes
-- Each moderation action writes an `/auditLog` entry with admin user, target, action, timestamp
+- Camera permission requested correctly; viewfinder + scanning animation render on a real device
+- Both success and error states reachable through the dev toggle
+- Verification status page renders the 4-layer chain visually identical to prototype
 
-### M7 — Polish + launch (2 weeks)
+#### F7 — Frontend QA + design review (0.5 weeks)
 
-**Goal:** public beta — app stores accept the build, monitoring is live, ops know what to watch.
+**Goal:** Phase F ships with pixel parity against the prototype and owner sign-off.
 
 **Deliverables:**
-- Firebase Analytics events on key actions (sign-up, Masjid registered, broadcast started, broadcast joined, broadcast ended)
-- Firebase Crashlytics integrated and verified (force-crash test)
-- Sentry (or rely on Crashlytics + Cloud Logging) for backend errors
-- Manual QA pass against an exit-criteria checklist
+- Side-by-side comparison of every one of the 36 screens against the prototype HTML — bug list filed for any mismatches
+- All Sev-1/Sev-2 visual bugs from the review are fixed
+- Widget tests covering critical state transitions (sign-in, broadcast start/end, QR scan, language switch)
+- Tagged demo build distributed via Firebase App Distribution or TestFlight for owner review
+- Owner sign-off before Phase B begins
+
+**Acceptance:**
+- Owner reviews all 36 screens on a real device and approves visual fidelity
+- All Sev-1/Sev-2 visual bugs from the review are fixed
+- Demo build is reproducible from the tagged commit
+
+---
+
+### Phase B — Backend integration
+
+Phase B replaces the mock repository implementations from F2 with real Firebase + AWS Chime + Cloud Functions backed implementations. **Screens themselves do not change** — only repository implementations swap.
+
+#### B0 — Firebase project setup (0.5 weeks)
+
+- Create `muslim-guider-pro-dev`, `-staging`, `-prod` Firebase projects
+- Enable Auth (Email/Password, Google, Apple), Firestore, Cloud Functions, Cloud Messaging, Storage, Analytics, Crashlytics
+- AWS account provisioned for Chime SDK; IAM service account with Chime + S3 (recording) permissions
+- Flutter app reads `firebase_options.dart` per env via `--dart-define`
+- `flutterfire configure` wired up; no manual Firebase Console edits
+
+#### B1 — Auth + user profile (1 week)
+
+- Swap `MockAuthRepository` → `FirebaseAuthRepository` and `MockUserRepository` → `FirestoreUserRepository`
+- Implement `/users/{userId}` schema per §7
+- Cloud Function for account deletion (soft + 30-day hard delete per GDPR)
+- Email verification flow
+- Custom claims: `platformRole`, `masjidRoles[]` set via admin Cloud Function
+
+#### B2 — Masjid registry + proximity (1 week)
+
+- Implement `/masjids/{masjidId}` schema per §7
+- Geohash indexing via `geoflutterfire_plus`; replace `MockMasjidRepository` → `FirestoreMasjidRepository`
+- Seed script: 50 sample Masjids in dev environment
+- Real Masjid registration flow writes records with `status: PENDING_VERIFICATION`
+
+#### B3 — Verification (full 4-Layer) backend (1.5 weeks)
+
+- All four verification layers backed by Cloud Functions:
+  - L1: triggered by Masjid registration
+  - L2: admin endpoint (`certifyMasjid`) — sets status to `PENDING_MUADHIN_AUTH`
+  - L3: admin endpoint (`nominateMuadhin`) — sets Muadhin status to `PENDING_COMMUNITY_VERIFICATION`
+  - L4: `submitQrScan` Cloud Function with geofence validation (distance from Masjid coords) + token validation + unique-user dedup
+- `/qrTokens` collection with TTL cleanup via scheduled Cloud Function
+- `/verificationScans` collection with audit fields (`userId`, `coordinates`, `geohash`, `deviceFingerprint`, `at`)
+- 20-scan threshold is a config doc in `/platformConfig` — adjustable without redeploy
+- All state transitions write `/auditLog` entries
+
+#### B4 — Streaming (AWS Chime + native platform channels) (2.5 weeks)
+
+- Per §3 architecture diagram: Cloud Functions wrap AWS Chime API; Android Kotlin module + iOS Swift module wrap the native Chime SDKs; Flutter facade unifies them
+- Cloud Functions: `createBroadcast(masjidId)`, `joinBroadcast(broadcastId)`, `endBroadcast(broadcastId)` — return signed join tokens
+- `/streams/{streamId}` Firestore doc per §7 schema
+- Android: `android/app/src/main/kotlin/.../StreamingPlugin.kt` wrapping `amazon-chime-sdk-android`
+- iOS: `ios/Runner/StreamingPlugin.swift` wrapping `AmazonChimeSDK` pod
+- Flutter facade `lib/data/streaming/chime_streaming_repository.dart` implements `stream_repository.dart`
+- Listener UI swaps mock waveform for real Chime audio level (where SDK exposes amplitude; otherwise keep synthetic)
+- Background audio via `audio_service` package
+- Reconnect logic + `stream-reconnecting-state` screen become real
+
+#### B5 — Prayer times + notifications (1 week)
+
+- On-device `adhan` package calculation (no backend math needed)
+- Cloud Function scheduled per region to dispatch prayer-time FCM topics
+- `firebase_messaging` integration: foreground + background handlers, deep links
+- Inbox reads real FCM notification history from `/notifications/{userId}/items`
+- Hijri date via `hijri` package
+
+#### B6 — Auxiliary backends (1 week)
+
+- **Recording:** Chime SDK recording config → S3 bucket → `replayUrl` written to `/streams` doc; replay player streams from S3
+- **Scheduled broadcasts:** Cloud Scheduler triggers Cloud Function at scheduled time → creates pending stream + notifies Muadhin
+- **Smart TV pairing:** Cloud Function issues 6-digit pairing code with 5-minute TTL stored in `/tvPairings`; QR code on mobile encodes a pairing URL. The actual TV apps are Phase 1.x, but the API contract is in place
+
+#### B7 — Backend integration testing (0.5 weeks)
+
+- All repository swaps complete; no mock implementation referenced outside `test/`
+- `firebase emulators:exec` integration tests for each repository
+- Smoke test: full user journey from sign-up → Masjid registration → verification → broadcast → listen, end-to-end
+
+---
+
+### Phase L — Launch
+
+#### L0 — Polish, analytics, monitoring (1 week)
+
+- Firebase Analytics events on sign-up, Masjid registered, broadcast started/joined/ended, QR scan submitted, verification complete
+- Crashlytics integrated + force-crash test
+- Sentry (optional) for backend errors
+- Manual QA pass against an exit-criteria checklist (one row per acceptance criterion in F0-F7 + B0-B7)
+- Firestore Security Rules audit + `firebase emulators:exec` rule tests
+- Cost monitoring + budget alerts at 50% / 80% / 100%
+
+#### L1 — Store submissions + beta + bug bash (1 week)
+
 - Apple App Store listing: screenshots, description, privacy nutrition label, age rating
 - Google Play listing: screenshots, description, data safety form, content rating
 - TestFlight + Google Play internal track distribution to ~20 beta testers
+- 7-day pilot with 5 Masjids
 - Bug bash + fix sprint
-- Firestore security rules audit
-- Cloud Functions IAM review
-- Cost monitoring + alerts (Firebase budget alerts at 50% / 80% / 100% of MVP budget)
-
-**Acceptance:**
-- App Store submission accepted (does not require approval — just submission with no rejection blockers)
-- Google Play internal track release live
-- All Firestore security rules tested with `firebase emulators:exec`
-- 7-day pilot with 5 Masjids and 50+ users produces no Sev-1 incidents
+- Submit for review
 
 ---
 
-## 6. Data model (Firestore schema)
+## 7. Data model (Firestore schema)
 
 All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All IDs are document IDs unless suffixed `Id` (FK).
 
-### 6.1 `/users/{userId}`
+### 7.1 `/users/{userId}`
 
 ```ts
 {
@@ -423,7 +739,7 @@ All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All ID
   gdprConsentAt: Timestamp | null
   dataProcessingConsent: boolean
   locationConsent: 'NEVER' | 'WHILE_IN_USE' | 'ALWAYS'
-  shareToPhases: string[]             // ['athan'] for MVP; later ['athan','tazkiya','ansapp',...]
+  shareToPhases: string[]             // ['athan'] for v1; later ['athan','tazkiya','ansapp',...]
 
   // Metadata
   createdAt: Timestamp
@@ -433,7 +749,7 @@ All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All ID
 }
 ```
 
-### 6.2 `/masjids/{masjidId}`
+### 7.2 `/masjids/{masjidId}`
 
 ```ts
 {
@@ -473,7 +789,7 @@ All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All ID
 }
 ```
 
-### 6.3 `/streams/{streamId}`
+### 7.3 `/streams/{streamId}`
 
 ```ts
 {
@@ -494,7 +810,7 @@ All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All ID
 }
 ```
 
-### 6.4 Other collections (created in M3 / M5 / M7)
+### 7.4 Other collections (created in B3 / B5 / B6)
 
 - `/auditLog/{eventId}` — append-only; security rules forbid update/delete
 - `/qrTokens/{tokenId}` — created collection, used in Phase 1.x for Layer 4
@@ -504,21 +820,21 @@ All fields use camelCase. All timestamp fields are Firestore `Timestamp`. All ID
 
 ---
 
-## 7. Security & privacy
+## 8. Security & privacy
 
 | Area | Approach | Notes vs RFQ |
 |---|---|---|
-| Auth tokens | Firebase ID tokens (RS256 JWTs, 1-hour TTL, auto-refresh by SDK) | Matches SEC-001 protocol requirement; TTL differs (RFQ wanted 15min — Firebase is 1h, acceptable for MVP) |
+| Auth tokens | Firebase ID tokens (RS256 JWTs, 1-hour TTL, auto-refresh by SDK) | Matches SEC-001 protocol requirement; TTL differs (RFQ wanted 15min — Firebase is 1h, acceptable for v1) |
 | MFA | Biometric (`local_auth`) as primary; SMS OTP via Firebase Auth as fallback | RFQ wanted TOTP; we'll add TOTP in v2 if regulatory pressure requires |
 | Data at rest | Firestore default AES-256 encryption (Google-managed keys) | RFQ specifies AWS KMS; deviation acceptable while on Firebase |
 | Data in transit | TLS 1.2+ enforced by Firebase + AWS Chime | Matches SEC-008 |
 | RBAC | Firestore Security Rules + custom claims (`role`, `masjidRoles[]`) | Matches SEC-009 role hierarchy |
 | Audit log | `/auditLog` collection with security rules: create only, no update/delete | Matches SEC-010 intent |
 | Rate limiting | Cloud Functions: per-IP + per-uid via `@google-cloud/api-gateway` quotas or in-function token-bucket | Matches SEC-006 |
-| Penetration test | Deferred to pre-launch hardening (post-MVP beta) | Defers SEC-011; tracked in §10 |
+| Penetration test | Deferred to pre-launch hardening (post-v1 beta) | Defers SEC-011; tracked in §11 |
 | GDPR | Consent fields in user doc; account deletion endpoint; data export endpoint | Matches Appendix A compliance row |
 
-**Firestore Security Rules (sketch — to be hardened in M1):**
+**Firestore Security Rules (sketch — to be hardened in B1):**
 ```
 match /users/{userId} {
   allow read: if request.auth.uid == userId
@@ -544,23 +860,23 @@ match /masjids/{masjidId} {
 
 ---
 
-## 8. RFQ requirement compliance map
+## 9. RFQ requirement compliance map
 
-A pragmatic mapping of every RFQ MUST HAVE to its Phase 1 MVP status. Anything labelled **DEFER** has an owner-acknowledged plan to address later.
+A pragmatic mapping of every RFQ MUST HAVE to its v1 status. Anything labelled **DEFER** has an owner-acknowledged plan to address later.
 
-| RFQ ID | Requirement | MVP Status | Notes |
+| RFQ ID | Requirement | v1 Status | Notes |
 |---|---|---|---|
 | **Streaming** | | | |
-| STR-001 | <500ms latency globally | **PARTIAL** | Target <1.5s in MVP; <500ms requires regional Chime + tuning, deferred |
+| STR-001 | <500ms latency globally | **PARTIAL** | Target <1.5s in v1 single-region; <500ms global requires multi-region Chime + tuning — Phase 1.x |
 | STR-002 | WebRTC mandatory | **MET** | AWS Chime is WebRTC under the hood |
-| STR-003 | 10,000+ concurrent | **DEFER** | Chime scales; we won't load-test to 10k in MVP |
+| STR-003 | 10,000+ concurrent | **DEFER** | Chime scales architecturally; 10k load test is pre-launch hardening |
 | STR-004 | Adaptive bitrate | **MET** | Chime handles adaptive bitrate natively |
 | STR-005 | Opus codec | **MET** | Chime default |
-| STR-006 | Health telemetry | **PARTIAL** | Listener count + duration in MVP; full per-stream metrics in v2 |
+| STR-006 | Health telemetry | **PARTIAL** | Listener count + duration in v1; richer per-stream metrics (jitter, packet loss) in pre-launch hardening |
 | STR-007 | Auto-reconnect | **MET** | Chime SDK reconnect + Dart-side retry |
 | STR-008 | CDN edge nodes | **MET** | Chime is multi-region; we'll start in one region (US-East) |
 | STR-009 | TURN/STUN | **MET** | Chime handles NAT traversal |
-| STR-010 | Stream recording | **DEFER** | Out of MVP scope |
+| STR-010 | Stream recording | **MET** | Chime recording → S3 → replay player (B6) |
 | **Android** | | | |
 | AND-001 | Kotlin 100% | **DEVIATE** | Flutter (Dart). Owner override D2. |
 | AND-002 | MVVM + Repository | **DEVIATE** | Riverpod + Repository in Dart equivalent |
@@ -569,11 +885,11 @@ A pragmatic mapping of every RFQ MUST HAVE to its Phase 1 MVP status. Anything l
 | AND-005 | MediaSession + bg audio | **MET** | `audio_service` package wraps MediaSession |
 | AND-006 | Background location | **MET** | `geolocator` package |
 | AND-007 | BiometricPrompt | **MET** | `local_auth` package |
-| AND-008 | QR code scanning | **DEFER** | Until Layer 4 verification (post-MVP) |
+| AND-008 | QR code scanning | **MET** | `mobile_scanner` package (F6 UI + B3 backend) |
 | AND-009 | FCM push | **MET** | `firebase_messaging` |
 | AND-010 | Offline support | **MET** | Firestore offline cache + cached prayer times |
 | AND-011 | Hilt DI | **DEVIATE** | Riverpod for DI in Flutter |
-| AND-012 | Room DB | **DEVIATE** | Firestore offline cache covers MVP; `drift` if needed later |
+| AND-012 | Room DB | **DEVIATE** | Firestore offline cache covers v1; `drift` if needed later |
 | AND-013 | 80% test coverage | **TARGET** | Coverage gate in CI |
 | **iOS** | | | |
 | IOS-001 | Swift 100% | **DEVIATE** | Owner override D2. Streaming module is native Swift. |
@@ -583,26 +899,26 @@ A pragmatic mapping of every RFQ MUST HAVE to its Phase 1 MVP status. Anything l
 | IOS-005 | Background audio | **MET** | `audio_service` |
 | IOS-006 | Core Location bg | **MET** | `geolocator` (significant change API) |
 | IOS-007 | LocalAuthentication | **MET** | `local_auth` |
-| IOS-008 | QR scanning | **DEFER** | Same as AND-008 |
-| IOS-009 | APNs critical alerts | **PARTIAL** | Standard APNs in MVP; critical alerts entitlement applied for separately |
+| IOS-008 | QR scanning | **MET** | Same as AND-008 |
+| IOS-009 | APNs critical alerts | **PARTIAL** | Standard APNs in v1; critical-alerts entitlement applied for separately |
 | IOS-010 | Core Data | **DEVIATE** | Firestore offline cache |
 | IOS-012 | XCTest + XCUITest 80% | **TARGET** | Flutter test coverage in CI |
 | **Smart TV** | | | |
-| §3.3 | Masjid + Home Mode | **DROP** | Owner decision D3 — deferred to Phase 1.x |
+| §3.3 | Masjid + Home Mode (TV apps) | **PARTIAL** | Mobile-side pairing UI ships in v1 (F4); actual TV apps deferred to Phase 1.x per D3 |
 | **Proximity** | | | |
 | GEO-001 | Bg geolocation | **MET** | `geolocator` |
-| GEO-002 | Proximity scoring | **PARTIAL** | Distance-only in MVP; weighted scoring (follow history + trust) in v2 |
+| GEO-002 | Proximity scoring | **PARTIAL** | Distance-only in v1; weighted scoring with trust score requires Phase 2 Tazkiya |
 | GEO-003 | Auto-routing | **MET** | Default to nearest broadcasting Masjid |
 | GEO-004 | PostGIS spatial indexing <100ms | **PARTIAL** | Firestore + geohash; migration to PostGIS in Phase 2 |
-| GEO-005 | Geofencing | **DEFER** | Used in Layer 4 verification (post-MVP) |
+| GEO-005 | Geofencing | **MET** | Used in Layer 4 verification (B3 enforces geofence on QR scan) |
 | GEO-006 | Privacy controls | **MET** | Granular consent on first run + settings |
 | GEO-007 | On-device prayer time | **MET** | `adhan` package |
 | **Security** | | | |
 | SEC-001 | JWT RS256, 15min/7d | **PARTIAL** | Firebase ID tokens (RS256, 1h/refresh) |
 | SEC-002 | Biometric 2nd factor | **MET** | `local_auth` |
 | SEC-003 | OAuth 2.0 + OIDC IdP | **DEFER** | Firebase Auth covers Phase 1; Keycloak migration in Phase 2 |
-| SEC-004 | TOTP MFA | **DEFER** | Biometric covers MFA for MVP |
-| SEC-005 | Session mgmt + geo-anomaly | **PARTIAL** | Firebase concurrent sessions; geo-anomaly in v2 |
+| SEC-004 | TOTP MFA | **DEFER** | Biometric covers MFA for v1; TOTP Phase 1.x if regulatory pressure |
+| SEC-005 | Session mgmt + geo-anomaly | **PARTIAL** | Firebase concurrent sessions; geo-anomaly detection in pre-launch hardening |
 | SEC-006 | TLS 1.3 + CORS + rate limit | **PARTIAL** | TLS 1.2+ + CORS; rate limit in Cloud Functions |
 | SEC-007 | AES-256 + KMS | **PARTIAL** | Firestore default encryption; KMS deferred |
 | SEC-008 | TLS 1.3 in transit | **MET** | Firebase + Chime enforce TLS |
@@ -610,22 +926,22 @@ A pragmatic mapping of every RFQ MUST HAVE to its Phase 1 MVP status. Anything l
 | SEC-010 | Immutable audit log | **MET** | `/auditLog` with rules |
 | SEC-011 | Pen test | **DEFER** | Pre-launch hardening |
 | **SSO Hub** | | | |
-| SSO-001..010 | Full OIDC IdP | **DEFER** | Firebase Auth covers MVP; Keycloak migration when Phase 2 starts |
+| SSO-001..010 | Full OIDC IdP | **DEFER** | Firebase Auth covers v1; Keycloak migration when Phase 2 starts |
 | **Verification** | | | |
-| §4.1 Layer 1–3 | Multi-actor approval | **PARTIAL** | Admin-driven; full Imam-driven flow in v2 |
-| §4.1 Layer 4 | 20 QR scans + geofence | **DEFER** | Schema reserved; flow built in v2 |
+| §4.1 Layer 1–3 | Multi-actor approval | **MET** | Full Imam-driven flow in B3 (Imam role can certify Masjid + nominate Muadhin) |
+| §4.1 Layer 4 | 20 QR scans + geofence | **MET** | Full flow: QR scan UI (F6) + geofence-validating Cloud Function (B3) + configurable threshold |
 
-**Bottom line: 25 MUST HAVEs met (with substitutions), 12 partial, 9 deferred to a named milestone, 6 dropped or deviated under owner override D2/D3.**
+**Bottom line:** Under decisions D2 (Flutter) and D8 (all 36 screens), the v1 plan **meets or partially meets every RFQ MUST HAVE** except infrastructure-scale items (10k load test, multi-region <500ms latency, third-party pen test) that are pre-launch hardening or Phase 1.x. Language-level MUST HAVEs (AND-001, IOS-001, etc.) are intentional deviations under owner authority. **No MUST HAVE is dropped from v1.**
 
 ---
 
-## 9. Forward compatibility (the 7-pillar promise)
+## 10. Forward compatibility (the 7-pillar promise)
 
 Phase 1 must not box Phases 2–7 into a corner. Three structural commitments make later phases possible without re-architecture:
 
 1. **User schema reserves Phase 2–7 fields up front.** Every user document has `tazkiyaScore`, `familyTreeId`, `walletAddress`, etc. as nullable fields from day 1. When Phase 2 starts, we populate; we don't migrate.
 
-2. **Firestore is acknowledged as transitional.** The plan is to migrate to Postgres + PostGIS (and optionally Neo4j or `pg_graphql` for AnsApp) **when Phase 2 onset triggers it**. We will write a migration script in M0 stub form and exercise it in CI at low fidelity, so we are not surprised when we run it for real.
+2. **Firestore is acknowledged as transitional.** The plan is to migrate to Postgres + PostGIS (and optionally Neo4j or `pg_graphql` for AnsApp) **when Phase 2 onset triggers it**. We will write a migration script in B0 stub form and exercise it in CI at low fidelity, so we are not surprised when we run it for real.
 
 3. **Auth is portable.** Firebase Auth issues standard OIDC ID tokens. When Keycloak replaces it, the user's `userId` remains stable (Firebase UID becomes the legacy ID, migration keeps the mapping). Apps continue to validate JWTs the same way.
 
@@ -637,27 +953,27 @@ Phase 1 must not box Phases 2–7 into a corner. Three structural commitments ma
 
 ---
 
-## 10. Known risks & mitigations
+## 11. Known risks & mitigations
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R1 | AWS Chime + Flutter has no first-class SDK; community wrapper is unmaintained | High | High | Build our own thin platform-channel layer over the official native SDKs (Kotlin + Swift). Isolate to one Dart module so the audio gap doesn't bleed into the rest of the app. Budget for native-mobile help during M4. |
-| R2 | Firestore + geohash cannot hit RFQ GEO-004 (<100ms PostGIS-grade) at scale | Medium | Medium | Acceptable for MVP at <10k Masjids. Migration to Postgres + PostGIS is a tracked Phase 2 trigger. Document threshold (active Masjid count) where migration becomes urgent. |
-| R3 | <500ms latency requirement (RFQ STR-001) not met by single-region Chime | High | Medium | Multi-region Chime deployment + edge selection is post-MVP hardening. MVP target is <1.5s, which is below the perceptual threshold for live broadcasts. |
-| R4 | Apple App Store rejection for "broadcasting / streaming / location" — privacy and entitlements | Medium | High | Submit early in M7; have App Privacy and entitlement justifications written. Critical alerts entitlement applied for separately and not blocking MVP. |
+| R1 | AWS Chime + Flutter has no first-class SDK; community wrapper is unmaintained | High | High | Build our own thin platform-channel layer over the official native SDKs (Kotlin + Swift). Isolate to one Dart module so the audio gap doesn't bleed into the rest of the app. Budget for native-mobile help during B4. |
+| R2 | Firestore + geohash cannot hit RFQ GEO-004 (<100ms PostGIS-grade) at scale | Medium | Medium | Acceptable for v1 at <10k Masjids. Migration to Postgres + PostGIS is a tracked Phase 2 trigger. Document threshold (active Masjid count) where migration becomes urgent. |
+| R3 | <500ms latency requirement (RFQ STR-001) not met by single-region Chime | High | Medium | Multi-region Chime deployment + edge selection is Phase 1.x. v1 target is <1.5s, which is below the perceptual threshold for live broadcasts. |
+| R4 | Apple App Store rejection for "broadcasting / streaming / location" — privacy and entitlements | Medium | High | Submit early in L1; have App Privacy and entitlement justifications written. Critical-alerts entitlement applied for separately and not blocking v1. |
 | R5 | Religious/cultural review (terminology, scholarly endorsement) not in plan | Medium | High | Engage a subject-matter advisor before public beta. Glossary in RFQ §11 is a baseline; product copy and verification flow need scholar review. |
 | R6 | Background audio behaviour differs across Android OEMs (battery optimisation kills services) | High | Medium | `audio_service` mitigates most; document supported Android device list at beta; flag OEMs (Xiaomi, Oppo, etc.) that aggressively kill background services. |
-| R7 | Cost blow-out: Firebase + AWS Chime not free at 50k+ MAU | Medium | High | Set billing alerts at 50/80/100% of monthly budget. Track per-stream cost in M4. Have a self-host LiveKit OSS or Chime negotiated-rate plan ready as a Plan B if costs spike. |
-| R8 | Verification MVP (admin-driven) doesn't scale past ~50 Masjids | Medium | Medium | Acceptable until then. The full 4-layer flow design is documented; build it in v2 the moment admin workload exceeds 5 approvals/day. |
+| R7 | Cost blow-out: Firebase + AWS Chime not free at 50k+ MAU | Medium | High | Set billing alerts at 50/80/100% of monthly budget. Track per-stream cost in B4. Have a self-host LiveKit OSS or Chime negotiated-rate plan ready as a Plan B if costs spike. |
+| R8 | Full 4-Layer verification requires real Imams to nominate Muadhins — if no Imams are recruited, the verification chain stalls and no Masjid can broadcast | Medium | High | Onboard 3-5 Imams pre-launch as the seed chain. Document a fallback (platform admin can act as the Imam role for the first cohort of Masjids while the Imam network grows). |
 
 ---
 
-## 11. Quality gates
+## 12. Quality gates
 
 Each module ships only when these are green:
 
 - `flutter analyze` zero issues
-- `flutter test` passes with ≥70% coverage on `lib/features/{module}/` (target 80% by M7)
+- `flutter test` passes with ≥70% coverage on `lib/features/{module}/` (target 80% by L1)
 - Manual smoke test on one Android device + one iOS device + one web browser
 - New Firestore Security Rules pass `firebase emulators:exec` rule tests
 - Cloud Functions covered by unit tests against the emulator
@@ -665,57 +981,74 @@ Each module ships only when these are green:
 - All new Dart files have a one-line header comment describing the file's purpose (per project convention)
 - PR template checklist completed by author and reviewer
 
-Pre-launch (M7 gate):
+Pre-launch (L1 gate):
 - Privacy policy and Terms of Service published and linked from the app
 - App Privacy / Data Safety forms completed for both stores
 - Firebase Crashlytics free of unhandled fatal crashes in 7-day pilot
-- All M1–M6 acceptance criteria reverified after polish work
+- All F0-F7 + B0-B7 acceptance criteria reverified after polish work
 - Beta tester feedback addressed (Sev-1 + Sev-2 only — Sev-3 deferred to post-launch backlog)
 
 ---
 
-## 12. Open questions (owner decisions needed)
+## 13. Open questions (owner decisions needed)
 
 These do not block writing this doc, but must be resolved before the module that depends on them starts.
 
-1. **Religious advisor / scholarly endorsement** — who is the named subject-matter authority for the platform? Needed before public beta. *Blocks M3 acceptance.*
-2. **Default launch region(s)** — start in one country (e.g., UAE, Saudi, Indonesia, Malaysia, US) for the beta? *Affects M2 Masjid seeding and M4 Chime region.*
-3. **Pricing** — free-forever, freemium, or per-Masjid SaaS for the institution side? *Affects M0 schema (subscription fields) and M6 admin dashboard.*
-4. **Beta tester pool** — where do the first 50 testers come from? *Blocks M7 launch.*
-5. **App Store accounts** — Apple Developer Program + Google Play Console enrolled under what entity (individual / metahealth.us / new entity)? *Blocks M7 submission.*
+1. **Religious advisor / scholarly endorsement** — who is the named subject-matter authority for the platform? Needed before public beta. *Blocks B3 acceptance.*
+2. **Default launch region(s)** — start in one country (e.g., UAE, Saudi, Indonesia, Malaysia, US) for the beta? *Affects B2 Masjid seeding and B4 Chime region.*
+3. **Pricing** — free-forever, freemium, or per-Masjid SaaS for the institution side? *Affects F2 schema (subscription fields) and the admin dashboard.*
+4. **Beta tester pool** — where do the first 50 testers come from? *Blocks L1 launch.*
+5. **App Store accounts** — Apple Developer Program + Google Play Console enrolled under what entity (individual / metahealth.us / new entity)? *Blocks L1 submission.*
 6. **Live-Athan content rights** — is the Muadhin's voice content owned by the platform, the Masjid, or the Muadhin themselves? *Affects Terms of Service and ownership of any future recordings.*
 
 ---
 
-## 13. Sequencing & calendar (12-week MVP)
+## 14. Sequencing & calendar (~21-week build)
 
 ```
-            W1  W2  W3  W4  W5  W6  W7  W8  W9  W10 W11 W12
-M0 Found.   ##  ##
-M1 Auth          ##  ##
-M2 Masjid            ##  ##
-M3 Verify                    ##
-M4 Stream                        ##  ##  ##
-M5 Prayer                                ##
-M6 Admin                                     ##
-M7 Polish                                        ##  ##
+              W1  W2  W3  W4  W5  W6  W7  W8  W9  W10 W11 W12 W13 W14 W15 W16 W17 W18 W19 W20 W21
+═ PHASE F ════════════════════════════════════════
+F0 Found.     ##
+F1 Design         ##  ##
+F2 Mocks              ##
+F3 Onboard            ##  ##
+F4 Listener               ##  ##  ##
+F5 Broadcast                      ##  ##
+F6 Verify                             ##
+F7 FE QA                                  ##
+═ PHASE B ════════════════════════════════════════
+B0 FB proj                                    ##
+B1 Auth                                       ##
+B2 Masjid                                         ##
+B3 Verify                                             ##  ##
+B4 Stream                                             ##  ##  ##
+B5 Prayer                                                     ##
+B6 Aux                                                            ##
+B7 BE QA                                                              ##
+═ PHASE L ════════════════════════════════════════
+L0 Polish                                                                 ##
+L1 Stores                                                                     ##
 ```
 
-- **M3** (Verification MVP) runs in parallel with the tail of M2 — they share data access patterns.
-- **M5** (Prayer times) runs in parallel with M4 (Streaming) since they share no code paths.
-- **M6** (Admin web) runs in the same week as M7's first week to compress; treat this as the most-likely slip point.
+**Phase F (weeks 1-10):** Frontend with no backend cost. Limited parallelism — F1 + F2 can overlap; F3-F6 each owns a prototype category and can run mostly sequentially. The end of F7 is the **owner sign-off gate** before Phase B starts.
 
-Buffer: this is a 12-week plan with **no slack**. Realistic expectation is **14–15 weeks** including holidays, sick days, and unknown unknowns. Treat the 12-week number as a north star, not a commitment.
+**Phase B (weeks 11-19):** Backend integration. Heavier parallelism is possible — B3, B4, B5 can run in parallel after B2 lands. B4 (Chime + platform channels) is the longest single module and the highest risk; if it slips, B6 and B7 slip with it.
+
+**Phase L (weeks 20-21):** Polish, analytics, store submission, beta. The shortest phase but the highest-stakes — App Store rejection on submit-day pushes everything.
+
+Buffer: this is a 21-week plan with **no slack**. Realistic expectation is **24-26 weeks** including holidays, sick days, App Store back-and-forth, and unknown unknowns. Treat the 21-week number as a north star, not a commitment.
+
+**Why frontend-first matters for the schedule:** by week 10 you have a clickable, demo-able Flutter app showing all 36 screens. That's a tangible halfway-point artifact you can show to advisors, beta testers, or investors before any backend cost is incurred. If priorities change after F7, the Flutter codebase is reusable; only the (unbuilt) backend plan would be discarded.
 
 ---
 
-## 14. Next steps once this doc is approved
+## 15. Next steps once this doc is approved
 
-1. Resolve open questions in §12.
-2. Create one implementation-plan doc per module (M0 → M1 → ...) — short, executable, test-first.
+1. Resolve open questions in §13.
+2. Create one implementation-plan doc per Phase F module (F0 → F1 → ...) — short, executable, test-first. Phase B and L plans get drafted near the end of Phase F.
 3. Set up Firebase projects (`muslim-guider-pro-dev`, `-staging`, `-prod`).
 4. Set up AWS account for Chime SDK; provision an IAM service account for Cloud Functions.
-5. Begin M0.
+5. Begin F0 (the Phase F foundation — no backend dependencies, no Firebase setup yet).
 
 ---
 
