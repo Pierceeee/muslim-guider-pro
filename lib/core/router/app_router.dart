@@ -6,6 +6,7 @@ import '../../data/models/user.dart';
 import '../../features/auth/sign_in_screen.dart';
 import '../../features/broadcaster/dashboard/masjid_dashboard_screen.dart';
 import '../../features/broadcaster/go_live/go_live_pre_check_screen.dart';
+import '../../features/broadcaster/live/live_broadcast_screen.dart';
 import '../../features/broadcaster/home/home_prayer_widget_screen.dart';
 import '../../features/listener/stub_listener_home.dart';
 import '../../providers/current_user_provider.dart';
@@ -81,8 +82,8 @@ GoRouter buildAppRouter(ProviderContainer container) {
       ),
       GoRoute(
         path: '${RouteNames.livePath}/:streamId',
-        builder: (context, state) => _PlaceholderScreen(
-          'Live (placeholder) streamId=${state.pathParameters['streamId']}',
+        builder: (context, state) => LiveBroadcastScreen(
+          streamId: state.pathParameters['streamId']!,
         ),
       ),
       GoRoute(
