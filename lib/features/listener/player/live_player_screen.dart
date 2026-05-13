@@ -80,6 +80,21 @@ class _LivePlayerScreenState extends ConsumerState<LivePlayerScreen>
 
   void _toggleFavorite() {
     setState(() => _favorited = !_favorited);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.surfaceCard,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            _favorited
+                ? 'Added to favourites'
+                : 'Removed from favourites',
+            style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface),
+          ),
+        ),
+      );
   }
 
   void _share() {

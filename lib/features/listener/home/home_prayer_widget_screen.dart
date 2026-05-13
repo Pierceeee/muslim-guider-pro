@@ -85,7 +85,7 @@ class _HomePrayerWidgetScreenState
                   child: _CompassWithSideCard(
                     schedule: schedule,
                     active: active,
-                    onAdhanTap: () => _scrollHintFeedback(context),
+                    onAdhanTap: _openAdhan,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -117,20 +117,19 @@ class _HomePrayerWidgetScreenState
     );
   }
 
-  void _scrollHintFeedback(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.surfaceCard,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            "Tap the masjid card on the dashboard to start listening.",
-            style: AppTypography.bodyMd.copyWith(color: AppColors.onSurface),
-          ),
-        ),
+  void _openAdhan() {
+    // Prefer the user's preferred masjid if it's currently broadcasting; fall
+    // back to the nearby-masjids discovery surface so the tap is never a no-op.
+    final masjid = ref.read(preferredMasjidProvider).valueOrNull;
+    final streamId = masjid?.currentStreamId;
+    if (streamId != null) {
+      context.goNamed(
+        ListenerRoute.nameLivePlayer,
+        pathParameters: <String, String>{'streamId': streamId},
       );
+      return;
+    }
+    context.goNamed(ListenerRoute.nameNearbyMasjids);
   }
 }
 

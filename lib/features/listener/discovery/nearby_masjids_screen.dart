@@ -54,6 +54,8 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
                 _MapPanel(
                   pins: nearbyAsync.valueOrNull?.take(3).toList() ??
                       const <Masjid>[],
+                  onSearchTap: () =>
+                      context.goNamed(ListenerRoute.nameSearchResults),
                 ),
                 _ContentHeader(
                   count: nearbyAsync.valueOrNull?.length ?? 0,
@@ -61,22 +63,25 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
                   loading: nearbyAsync.isLoading,
                   onModeChanged: (m) => setState(() => _mode = m),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.containerMargin,
-                  ),
-                  child: nearbyAsync.when(
-                    data: (list) => _MasjidList(
-                      masjids: list,
-                      onTap: (id) => context.goNamed(
-                        ListenerRoute.nameMasjidDetail,
-                        pathParameters: <String, String>{'masjidId': id},
-                      ),
+                if (_mode == _ViewMode.list)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.containerMargin,
                     ),
-                    loading: () => const _MasjidListSkeleton(),
-                    error: (err, _) => _ListError(message: err.toString()),
-                  ),
-                ),
+                    child: nearbyAsync.when(
+                      data: (list) => _MasjidList(
+                        masjids: list,
+                        onTap: (id) => context.goNamed(
+                          ListenerRoute.nameMasjidDetail,
+                          pathParameters: <String, String>{'masjidId': id},
+                        ),
+                      ),
+                      loading: () => const _MasjidListSkeleton(),
+                      error: (err, _) => _ListError(message: err.toString()),
+                    ),
+                  )
+                else
+                  const _MapModeHint(),
               ],
             ),
             const Positioned(
@@ -238,8 +243,9 @@ class _CircleIconButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MapPanel extends StatelessWidget {
-  const _MapPanel({required this.pins});
+  const _MapPanel({required this.pins, required this.onSearchTap});
   final List<Masjid> pins;
+  final VoidCallback onSearchTap;
 
   @override
   Widget build(BuildContext context) {
@@ -304,11 +310,11 @@ class _MapPanel extends StatelessWidget {
               child: _MapPin(label: _pinLabelFor(pins[2])),
             ),
           const Positioned(top: 160, left: 160, child: _PulsingUserDot()),
-          const Positioned(
+          Positioned(
             top: 16,
             left: 0,
             right: 0,
-            child: Center(child: _SearchBar()),
+            child: Center(child: _SearchBar(onTap: onSearchTap)),
           ),
         ],
       ),
@@ -481,7 +487,8 @@ class _PulsingUserDotState extends State<_PulsingUserDot>
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar();
+  const _SearchBar({required this.onTap});
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -489,50 +496,91 @@ class _SearchBar extends StatelessWidget {
       widthFactor: 0.9,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard.withValues(alpha: 0.9),
+        child: Material(
+          color: AppColors.surfaceCard.withValues(alpha: 0.9),
+          borderRadius: AppRadii.fullAll,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: AppRadii.fullAll,
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.2),
-            ),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: <Widget>[
-              const Icon(
-                Symbols.search_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  style: AppTypography.bodyMd.copyWith(
-                    color: AppColors.onSurface,
-                    fontSize: 14,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: AppRadii.fullAll,
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
-                  cursorColor: AppColors.primary,
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    hintText: 'Search for a masjid',
-                    hintStyle: AppTypography.bodyMd.copyWith(
-                      color: AppColors.inkMuted,
-                      fontSize: 14,
+                ],
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: <Widget>[
+                  const Icon(
+                    Symbols.search_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Search for a masjid',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.inkMuted,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// Hint shown below the toggle when MAP mode is active — list is hidden so the
+// map panel above is the focus, and this nudge tells users where to look.
+class _MapModeHint extends StatelessWidget {
+  const _MapModeHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.containerMargin,
+      ),
+      child: Container(
+        padding: AppSpacing.cardInner,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: AppRadii.heroAll,
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.10),
+          ),
+        ),
+        child: Row(
+          children: <Widget>[
+            const Icon(
+              Symbols.location_on_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Tap a pin on the map above to open a masjid.',
+                style:
+                    AppTypography.bodyMd.copyWith(color: AppColors.inkMuted),
+              ),
+            ),
+          ],
         ),
       ),
     );

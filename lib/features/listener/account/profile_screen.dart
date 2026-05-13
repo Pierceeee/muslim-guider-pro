@@ -67,6 +67,8 @@ class ProfileScreen extends ConsumerWidget {
                       _EcosystemSection(
                         onComingSoon: (label) =>
                             _comingSoon(context, label),
+                        onLinkedTap: (label) =>
+                            _openLinked(context, label),
                       ),
                       const SizedBox(height: AppSpacing.sectionGap),
                       _AccountSettingsButton(
@@ -96,6 +98,13 @@ class ProfileScreen extends ConsumerWidget {
     if (context.canPop()) {
       context.pop();
     } else {
+      context.goNamed(ListenerRoute.nameHomeListener);
+    }
+  }
+
+  void _openLinked(BuildContext context, String pillarLabel) {
+    // Today only "Live Athan" is linked; it IS the listener dashboard.
+    if (pillarLabel == 'Live Athan') {
       context.goNamed(ListenerRoute.nameHomeListener);
     }
   }
@@ -526,8 +535,12 @@ class _TazkiyaTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _EcosystemSection extends StatelessWidget {
-  const _EcosystemSection({required this.onComingSoon});
+  const _EcosystemSection({
+    required this.onComingSoon,
+    required this.onLinkedTap,
+  });
   final void Function(String pillarLabel) onComingSoon;
+  final void Function(String pillarLabel) onLinkedTap;
 
   static const _pillars = <_PillarRow>[
     _PillarRow(
@@ -584,6 +597,8 @@ class _EcosystemSection extends StatelessWidget {
             onTap: () {
               if (_pillars[i].status == _PillarStatus.soon) {
                 onComingSoon(_pillars[i].label);
+              } else {
+                onLinkedTap(_pillars[i].label);
               }
             },
           ),
