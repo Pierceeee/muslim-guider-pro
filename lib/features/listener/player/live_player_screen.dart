@@ -129,18 +129,35 @@ class _LivePlayerScreenState extends ConsumerState<LivePlayerScreen>
         ),
         child: SafeArea(
           child: streamAsync.when(
-            data: (stream) => _LoadedPlayer(
-              stream: stream,
-              ref: ref,
-              playing: _playing,
-              favorited: _favorited,
-              orbGlow: _orbGlow,
-              waveform: _waveform,
-              onMinimize: _minimize,
-              onTogglePlay: _togglePlay,
-              onToggleFavorite: _toggleFavorite,
-              onShare: _share,
-            ),
+            data: (stream) {
+              // Edge case: user landed on /live/<ended-stream-id> (e.g. from
+              // a stale notification or deep link). Send them to the replay
+              // player on next frame — mirror of the inverse redirect in
+              // `replay_player_screen.dart`.
+              if (stream.status != StreamStatus.live) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context.goNamed(
+                      ListenerRoute.nameReplayPlayer,
+                      pathParameters: <String, String>{'streamId': stream.id},
+                    );
+                  }
+                });
+                return const _PlayerLoading();
+              }
+              return _LoadedPlayer(
+                stream: stream,
+                ref: ref,
+                playing: _playing,
+                favorited: _favorited,
+                orbGlow: _orbGlow,
+                waveform: _waveform,
+                onMinimize: _minimize,
+                onTogglePlay: _togglePlay,
+                onToggleFavorite: _toggleFavorite,
+                onShare: _share,
+              );
+            },
             loading: () => const _PlayerLoading(),
             error: (err, _) =>
                 _PlayerError(message: err.toString(), onMinimize: _minimize),
@@ -249,8 +266,7 @@ class _LoadedPlayer extends StatelessWidget {
                 AppSpacing.containerMargin,
                 24,
               ),
-              child: _SignalCard(
-                latencyMs: stream.latencyMs ?? 0,
+              child: const _SignalCard(
                 bitrate: 64,
                 stable: true,
               ),
@@ -1029,11 +1045,9 @@ class _PlayPauseButtonState extends State<_PlayPauseButton> {
 
 class _SignalCard extends StatelessWidget {
   const _SignalCard({
-    required this.latencyMs,
     required this.bitrate,
     required this.stable,
   });
-  final int latencyMs;
   final int bitrate;
   final bool stable;
 
@@ -1071,8 +1085,9 @@ class _SignalCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'WebRTC · $bitrate kbps · '
-              '${stable ? "Stable" : "Reconnecting"} · ${latencyMs}ms',
+              // Latency lives in the top LIVE pill — signal card describes
+              // the transport, not the live timing.
+              'WebRTC · $bitrate kbps · ${stable ? "Stable" : "Reconnecting"}',
               style: AppTypography.bodyMd.copyWith(
                 color: AppColors.inkPrimary.withValues(alpha: 0.8),
                 fontSize: 13,
