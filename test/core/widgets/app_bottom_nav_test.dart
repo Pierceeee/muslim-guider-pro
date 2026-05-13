@@ -13,7 +13,9 @@ void main() {
         ),
       ),
     ));
-    expect(find.byIcon(Icons.home_outlined), findsOneWidget);
+    // currentIndex 0 means Home is selected — filled icon is in tree
+    expect(find.byIcon(Icons.home), findsOneWidget);
+    // Dashboard is not selected — outline variant is in the tree
     expect(find.byIcon(Icons.dashboard_outlined), findsOneWidget);
 
     await tester.tap(find.text('Dashboard'));
