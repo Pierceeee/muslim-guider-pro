@@ -47,6 +47,6 @@ class GoLiveController extends StateNotifier<GoLiveState> {
 }
 
 final goLiveControllerProvider =
-    StateNotifierProvider<GoLiveController, GoLiveState>((ref) {
+    StateNotifierProvider.autoDispose<GoLiveController, GoLiveState>((ref) {
   return GoLiveController();
 });

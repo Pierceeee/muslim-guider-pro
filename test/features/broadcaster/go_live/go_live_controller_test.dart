@@ -16,6 +16,9 @@ void main() {
   test('runFakeChecks moves network and geofence to ok', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
+    // Subscribe to prevent autoDispose from disposing the provider during
+    // the `await` inside runFakeChecks.
+    container.listen(goLiveControllerProvider, (_, next) {});
     await container.read(goLiveControllerProvider.notifier).runFakeChecks();
     final state = container.read(goLiveControllerProvider);
     expect(state.network, CheckStatus.ok);
