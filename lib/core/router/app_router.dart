@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/user.dart';
 import '../../features/auth/sign_in_screen.dart';
 import '../../providers/current_user_provider.dart';
+import '../../features/listener/stub_listener_home.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/stub_screen.dart';
 import 'route_names.dart';
@@ -71,8 +72,7 @@ GoRouter buildAppRouter(ProviderContainer container) {
       ),
       GoRoute(
         path: RouteNames.listenerHome,
-        builder: (context, state) =>
-            const _PlaceholderScreen('Listener Home (placeholder)'),
+        builder: (context, state) => const StubListenerHome(),
       ),
       GoRoute(
         path: RouteNames.goLive,

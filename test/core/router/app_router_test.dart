@@ -43,6 +43,6 @@ void main() {
     final auth = MockAuthRepository();
     await auth.signIn('u_aisha');
     await pumpApp(tester, auth);
-    expect(find.text('Listener Home (placeholder)'), findsOneWidget);
+    expect(find.textContaining('Listener experience'), findsOneWidget);
   });
 }
