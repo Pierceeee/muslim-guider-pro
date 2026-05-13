@@ -27,40 +27,42 @@ GoRouter buildAppRouter(ProviderContainer container) {
     routes: [
       GoRoute(
         path: RouteNames.root,
-        builder: (_, __) => const _BootingPlaceholder(),
+        builder: (context, state) => const _BootingPlaceholder(),
       ),
       GoRoute(
         path: RouteNames.signIn,
-        builder: (_, __) => const _PlaceholderScreen('Sign in (placeholder)'),
+        builder: (context, state) =>
+            const _PlaceholderScreen('Sign in (placeholder)'),
       ),
       GoRoute(
         path: RouteNames.broadcasterHome,
-        builder: (_, __) =>
+        builder: (context, state) =>
             const _PlaceholderScreen('Broadcaster Home (placeholder)'),
       ),
       GoRoute(
         path: RouteNames.broadcasterDashboard,
-        builder: (_, __) =>
+        builder: (context, state) =>
             const _PlaceholderScreen('Broadcaster Dashboard (placeholder)'),
       ),
       GoRoute(
         path: RouteNames.listenerHome,
-        builder: (_, __) =>
+        builder: (context, state) =>
             const _PlaceholderScreen('Listener Home (placeholder)'),
       ),
       GoRoute(
         path: RouteNames.goLive,
-        builder: (_, __) => const _PlaceholderScreen('Go Live (placeholder)'),
+        builder: (context, state) =>
+            const _PlaceholderScreen('Go Live (placeholder)'),
       ),
       GoRoute(
         path: '${RouteNames.livePath}/:streamId',
-        builder: (_, state) => _PlaceholderScreen(
+        builder: (context, state) => _PlaceholderScreen(
           'Live (placeholder) streamId=${state.pathParameters['streamId']}',
         ),
       ),
       GoRoute(
         path: '${RouteNames.summaryPath}/:streamId',
-        builder: (_, state) => _PlaceholderScreen(
+        builder: (context, state) => _PlaceholderScreen(
           'Summary (placeholder) streamId=${state.pathParameters['streamId']}',
         ),
       ),
@@ -82,7 +84,7 @@ class _UserChangeNotifier extends ChangeNotifier {
   _UserChangeNotifier(this._container) {
     _sub = _container.listen<AsyncValue<User?>>(
       currentUserProvider,
-      (_, __) => notifyListeners(),
+      (prev, next) => notifyListeners(),
       fireImmediately: false,
     );
   }
