@@ -95,7 +95,10 @@ class HomeListenerScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sectionGap),
                 _PrayerGrid(
                   schedule: schedule,
-                  activeIndex: activePrayer?.index ?? 2,
+                  // -1 = "no active cell" — keeps the grid neutral while the
+                  // schedule is still loading instead of confidently
+                  // highlighting Asr by default.
+                  activeIndex: activePrayer?.index ?? -1,
                   onTap: () =>
                       context.goNamed(ListenerRoute.namePrayerSchedule),
                 ),
@@ -123,6 +126,7 @@ class HomeListenerScreen extends ConsumerWidget {
                 _BroadcastsList(
                   broadcasts: liveBroadcasts,
                   loading: liveBroadcastsAsync.isLoading,
+                  hasError: liveBroadcastsAsync.hasError,
                   onTap: (streamId) => _goLivePlayer(context, streamId),
                 ),
               ],
@@ -725,36 +729,37 @@ class _ListenButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    return _PressableScale(
-      onTap: onTap ?? () {},
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: enabled
-              ? AppColors.primary
-              : AppColors.surfaceContainerHighest,
-          borderRadius: AppRadii.fullAll,
-          boxShadow: enabled
-              ? <BoxShadow>[
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          'LISTEN',
-          style: AppTypography.labelCaps.copyWith(
-            color: enabled ? AppColors.onPrimary : AppColors.inkMuted,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
-          ),
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+      decoration: BoxDecoration(
+        color: enabled
+            ? AppColors.primary
+            : AppColors.surfaceContainerHighest,
+        borderRadius: AppRadii.fullAll,
+        boxShadow: enabled
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                  blurRadius: 18,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Text(
+        'LISTEN',
+        style: AppTypography.labelCaps.copyWith(
+          color: enabled ? AppColors.onPrimary : AppColors.inkMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.5,
         ),
       ),
     );
+    // Skip the press-scale wrapper when disabled so taps don't animate a
+    // button that won't do anything.
+    if (!enabled) return pill;
+    return _PressableScale(onTap: onTap!, child: pill);
   }
 }
 
@@ -818,10 +823,12 @@ class _BroadcastsList extends StatelessWidget {
   const _BroadcastsList({
     required this.broadcasts,
     required this.loading,
+    required this.hasError,
     required this.onTap,
   });
   final List<LiveBroadcastView> broadcasts;
   final bool loading;
+  final bool hasError;
   final void Function(String streamId) onTap;
 
   @override
@@ -834,6 +841,34 @@ class _BroadcastsList extends StatelessWidget {
             SizedBox(height: 12),
             _BroadcastTileSkeleton(),
           ],
+        );
+      }
+      if (hasError) {
+        return Container(
+          padding: AppSpacing.cardInner,
+          decoration: BoxDecoration(
+            color: AppColors.bgElevated,
+            borderRadius: AppRadii.xlAll,
+            border: Border.all(
+              color: AppColors.error.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(
+                Symbols.error_rounded,
+                color: AppColors.error,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  "Couldn't load live broadcasts. Pull to refresh.",
+                  style: AppTypography.bodyMd.copyWith(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
         );
       }
       return Container(

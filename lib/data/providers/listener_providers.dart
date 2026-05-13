@@ -153,8 +153,12 @@ final liveBroadcastsViewProvider =
 /// hero card above the list) so we don't show the same masjid twice.
 final nearbyLiveBroadcastsProvider =
     FutureProvider<List<LiveBroadcastView>>((ref) async {
-  final all = await ref.watch(liveBroadcastsViewProvider.future);
-  final preferred = await ref.watch(preferredMasjidProvider.future);
+  // Fire both lookups in parallel — preferred-masjid only narrows the list,
+  // so there's no reason to await the broadcasts before subscribing to it.
+  final allFuture = ref.watch(liveBroadcastsViewProvider.future);
+  final preferredFuture = ref.watch(preferredMasjidProvider.future);
+  final all = await allFuture;
+  final preferred = await preferredFuture;
   if (preferred == null) return all;
   return all.where((b) => b.masjid.id != preferred.id).toList();
 });
