@@ -9,7 +9,8 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_schedule_repositor
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
 
 void main() {
-  Future<void> pumpApp(WidgetTester tester, MockAuthRepository auth) async {
+  Future<void> pumpApp(WidgetTester tester, MockAuthRepository auth,
+      {bool settle = true}) async {
     final container = ProviderContainer(overrides: [
       authRepositoryProvider.overrideWithValue(auth),
       masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
@@ -23,7 +24,14 @@ void main() {
       container: container,
       child: MaterialApp.router(routerConfig: router),
     ));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      // AnalogClock on Home has an infinite animation; pumpAndSettle would hang.
+      // Pump enough frames for the GoRouter redirect to flush.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
   testWidgets('unauthenticated user lands on sign-in', (tester) async {
@@ -35,8 +43,8 @@ void main() {
   testWidgets('Muadhin lands on broadcaster home', (tester) async {
     final auth = MockAuthRepository();
     await auth.signIn('u_imam_yusuf');
-    await pumpApp(tester, auth);
-    expect(find.text('Broadcaster Home (placeholder)'), findsOneWidget);
+    await pumpApp(tester, auth, settle: false);
+    expect(find.text('MUADHIN'), findsOneWidget);
   });
 
   testWidgets('Listener lands on listener home', (tester) async {
