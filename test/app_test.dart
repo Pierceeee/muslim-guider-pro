@@ -19,6 +19,6 @@ void main() {
       child: const MuslimGuiderProApp(),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in (placeholder)'), findsOneWidget);
+    expect(find.text('Choose a profile'), findsOneWidget);
   });
 }

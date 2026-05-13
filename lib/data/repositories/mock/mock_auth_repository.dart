@@ -35,4 +35,7 @@ class MockAuthRepository implements AuthRepository {
     _current = null;
     _controller.add(null);
   }
+
+  @override
+  List<User> availableMockUsers() => List.unmodifiable(kMockUsers);
 }

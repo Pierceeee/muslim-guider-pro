@@ -28,7 +28,8 @@ void main() {
 
   testWidgets('unauthenticated user lands on sign-in', (tester) async {
     await pumpApp(tester, MockAuthRepository());
-    expect(find.text('Sign in (placeholder)'), findsOneWidget);
+    expect(find.text('Muslim Guider'), findsOneWidget);
+    expect(find.text('Choose a profile'), findsOneWidget);
   });
 
   testWidgets('Muadhin lands on broadcaster home', (tester) async {

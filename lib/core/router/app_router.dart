@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/user.dart';
+import '../../features/auth/sign_in_screen.dart';
 import '../../providers/current_user_provider.dart';
 import 'route_names.dart';
 
@@ -31,8 +32,7 @@ GoRouter buildAppRouter(ProviderContainer container) {
       ),
       GoRoute(
         path: RouteNames.signIn,
-        builder: (context, state) =>
-            const _PlaceholderScreen('Sign in (placeholder)'),
+        builder: (context, state) => const SignInScreen(),
       ),
       GoRoute(
         path: RouteNames.broadcasterHome,

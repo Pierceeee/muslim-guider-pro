@@ -5,4 +5,5 @@ abstract class AuthRepository {
   Stream<User?> watchCurrentUser();
   Future<User> signIn(String mockUserId);
   Future<void> signOut();
+  List<User> availableMockUsers();
 }
