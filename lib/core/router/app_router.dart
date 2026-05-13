@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/user.dart';
 import '../../features/auth/sign_in_screen.dart';
 import '../../providers/current_user_provider.dart';
+import '../widgets/app_bottom_nav.dart';
+import '../widgets/stub_screen.dart';
 import 'route_names.dart';
 
 GoRouter buildAppRouter(ProviderContainer container) {
@@ -34,15 +36,38 @@ GoRouter buildAppRouter(ProviderContainer container) {
         path: RouteNames.signIn,
         builder: (context, state) => const SignInScreen(),
       ),
-      GoRoute(
-        path: RouteNames.broadcasterHome,
-        builder: (context, state) =>
-            const _PlaceholderScreen('Broadcaster Home (placeholder)'),
-      ),
-      GoRoute(
-        path: RouteNames.broadcasterDashboard,
-        builder: (context, state) =>
-            const _PlaceholderScreen('Broadcaster Dashboard (placeholder)'),
+      ShellRoute(
+        builder: (context, state, child) => _BroadcasterShell(
+          location: state.matchedLocation,
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: RouteNames.broadcasterHome,
+            builder: (context, state) =>
+                const _PlaceholderScreen('Broadcaster Home (placeholder)'),
+          ),
+          GoRoute(
+            path: RouteNames.broadcasterDashboard,
+            builder: (context, state) =>
+                const _PlaceholderScreen('Broadcaster Dashboard (placeholder)'),
+          ),
+          GoRoute(
+            path: RouteNames.broadcasterNearby,
+            builder: (context, state) =>
+                const StubScreen(label: 'Nearby', icon: Icons.near_me_outlined),
+          ),
+          GoRoute(
+            path: RouteNames.broadcasterInbox,
+            builder: (context, state) =>
+                const StubScreen(label: 'Inbox', icon: Icons.inbox_outlined),
+          ),
+          GoRoute(
+            path: RouteNames.broadcasterMe,
+            builder: (context, state) =>
+                const StubScreen(label: 'Me', icon: Icons.person_outline),
+          ),
+        ],
       ),
       GoRoute(
         path: RouteNames.listenerHome,
@@ -111,4 +136,35 @@ class _PlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Scaffold(body: Center(child: Text(label)));
+}
+
+class _BroadcasterShell extends StatelessWidget {
+  const _BroadcasterShell({required this.location, required this.child});
+
+  final String location;
+  final Widget child;
+
+  static const _tabs = [
+    RouteNames.broadcasterHome,
+    RouteNames.broadcasterDashboard,
+    RouteNames.broadcasterNearby,
+    RouteNames.broadcasterInbox,
+    RouteNames.broadcasterMe,
+  ];
+
+  int get _currentIndex {
+    final i = _tabs.indexOf(location);
+    return i < 0 ? 0 : i;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: AppBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (i) => GoRouter.of(context).go(_tabs[i]),
+      ),
+    );
+  }
 }
