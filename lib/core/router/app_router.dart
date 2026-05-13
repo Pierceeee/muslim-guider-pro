@@ -7,6 +7,7 @@ import '../../features/auth/sign_in_screen.dart';
 import '../../features/broadcaster/dashboard/masjid_dashboard_screen.dart';
 import '../../features/broadcaster/go_live/go_live_pre_check_screen.dart';
 import '../../features/broadcaster/live/live_broadcast_screen.dart';
+import '../../features/broadcaster/summary/broadcast_summary_screen.dart';
 import '../../features/broadcaster/home/home_prayer_widget_screen.dart';
 import '../../features/listener/stub_listener_home.dart';
 import '../../providers/current_user_provider.dart';
@@ -88,8 +89,8 @@ GoRouter buildAppRouter(ProviderContainer container) {
       ),
       GoRoute(
         path: '${RouteNames.summaryPath}/:streamId',
-        builder: (context, state) => _PlaceholderScreen(
-          'Summary (placeholder) streamId=${state.pathParameters['streamId']}',
+        builder: (context, state) => BroadcastSummaryScreen(
+          streamId: state.pathParameters['streamId']!,
         ),
       ),
     ],
@@ -129,14 +130,6 @@ class _BootingPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       const Scaffold(body: Center(child: CircularProgressIndicator()));
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen(this.label);
-  final String label;
-  @override
-  Widget build(BuildContext context) =>
-      Scaffold(body: Center(child: Text(label)));
 }
 
 class _BroadcasterShell extends StatelessWidget {
