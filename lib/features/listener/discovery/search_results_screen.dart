@@ -9,6 +9,7 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/models/masjid.dart';
+import '../../../data/providers/listener_providers.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../shared/listener_bottom_nav.dart';
 
@@ -26,10 +27,19 @@ class SearchResultsScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
-  final _controller = TextEditingController(text: 'al-ab');
+  final _controller = TextEditingController();
   final _focusNode = FocusNode();
   // Local recent-search list — moves to SharedPreferences in B-phase.
   final _recentSearches = <String>['Masjid Al-Abrar', 'Masjid de Paris'];
+
+  // The trimmed query the current results were fetched for. Comparing
+  // against this lets us avoid re-issuing the same Future when the controller
+  // fires for a non-query change (cursor move, whitespace add).
+  String _activeQuery = '';
+  // Latest results displayed. Kept across in-flight reloads so the list
+  // doesn't flash a skeleton on every keystroke.
+  List<Masjid> _results = const <Masjid>[];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -38,6 +48,7 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
+    _runQuery('');
   }
 
   @override
@@ -48,7 +59,48 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
     super.dispose();
   }
 
-  void _onQueryChanged() => setState(() {});
+  Future<List<Masjid>> _fetchFor(String q) {
+    if (q.isEmpty) {
+      // Empty query goes through the location-aware provider so this screen
+      // stays in sync with the rest of the app instead of using hardcoded
+      // Birmingham coords.
+      return ref.read(nearbyMasjidsProvider.future);
+    }
+    return ref.read(masjidRepositoryProvider).search(q);
+  }
+
+  void _runQuery(String q) {
+    setState(() => _loading = true);
+    _fetchFor(q).then((r) {
+      if (!mounted) return;
+      // Drop stale responses if the user has since typed a different query.
+      if (q != _activeQuery) return;
+      setState(() {
+        _results = r;
+        _loading = false;
+      });
+    }).catchError((_) {
+      if (!mounted) return;
+      if (q != _activeQuery) return;
+      setState(() {
+        _results = const <Masjid>[];
+        _loading = false;
+      });
+    });
+  }
+
+  void _onQueryChanged() {
+    final next = _controller.text.trim();
+    if (next == _activeQuery) {
+      // Text mutation that didn't change the trimmed query (e.g., trailing
+      // space). Still rebuild so the X clear-button visibility refreshes,
+      // but don't re-issue the Future.
+      setState(() {});
+      return;
+    }
+    _activeQuery = next;
+    _runQuery(next);
+  }
 
   void _cancel() {
     if (context.canPop()) {
@@ -71,7 +123,7 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
   }
 
   void _selectMasjid(String id) {
-    final query = _controller.text.trim();
+    final query = _activeQuery;
     if (query.isNotEmpty && !_recentSearches.contains(query)) {
       setState(() => _recentSearches.insert(0, query));
     }
@@ -99,8 +151,14 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _controller.text.trim();
-    final repo = ref.watch(masjidRepositoryProvider);
+    final query = _activeQuery;
+    // Show the skeleton only on the very first load (no results yet) —
+    // subsequent keystrokes keep the previous list visible while the new
+    // query is in flight.
+    final showSkeleton = _loading && _results.isEmpty;
+    final headerLabel = query.isEmpty
+        ? 'NEARBY · ${_results.length} MASJIDS'
+        : 'RESULTS · ${_results.length} ${_results.length == 1 ? "MATCH" : "MATCHES"}';
 
     return Scaffold(
       backgroundColor: AppColors.bgDeepNight,
@@ -147,65 +205,48 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
                         ),
                         const SizedBox(height: AppSpacing.sectionGap),
                       ],
-                      // Results block — async future, filters refresh per query
-                      FutureBuilder<List<Masjid>>(
-                        future: query.isEmpty
-                            ? repo.getNearby(
-                                latitude: 52.4862,
-                                longitude: -1.8904,
-                              )
-                            : repo.search(query),
-                        builder: (context, snap) {
-                          final results = snap.data ?? const <Masjid>[];
-                          final isLoading =
-                              snap.connectionState == ConnectionState.waiting;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Row(
                             children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Text(
-                                    query.isEmpty
-                                        ? 'NEARBY · ${results.length} MASJIDS'
-                                        : 'RESULTS · ${results.length} ${results.length == 1 ? "MATCH" : "MATCHES"}',
-                                    style:
-                                        AppTypography.labelCaps.copyWith(
-                                      color: AppColors.inkMuted,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                headerLabel,
+                                style: AppTypography.labelCaps.copyWith(
+                                  color: AppColors.inkMuted,
+                                  letterSpacing: 2,
+                                ),
                               ),
-                              const SizedBox(height: 16),
-                              if (isLoading)
-                                const _ResultsSkeleton()
-                              else if (results.isEmpty)
-                                _NoResults(query: query)
-                              else
-                                Column(
-                                  children: <Widget>[
-                                    for (var i = 0; i < results.length; i++)
-                                      ...<Widget>[
-                                        if (i > 0) const SizedBox(height: 12),
-                                        _ResultCard(
-                                          masjid: results[i],
-                                          query: query,
-                                          onTap: () =>
-                                              _selectMasjid(results[i].id),
-                                        ),
-                                      ],
-                                  ],
-                                ),
-                              if (query.isNotEmpty) ...<Widget>[
-                                const SizedBox(height: AppSpacing.sectionGap),
-                                _GlobalSearchButton(
-                                  query: query,
-                                  onTap: _searchGlobally,
-                                ),
-                              ],
                             ],
-                          );
-                        },
+                          ),
+                          const SizedBox(height: 16),
+                          if (showSkeleton)
+                            const _ResultsSkeleton()
+                          else if (_results.isEmpty)
+                            _NoResults(query: query)
+                          else
+                            Column(
+                              children: <Widget>[
+                                for (var i = 0; i < _results.length; i++)
+                                  ...<Widget>[
+                                    if (i > 0) const SizedBox(height: 12),
+                                    _ResultCard(
+                                      masjid: _results[i],
+                                      query: query,
+                                      onTap: () =>
+                                          _selectMasjid(_results[i].id),
+                                    ),
+                                  ],
+                              ],
+                            ),
+                          if (query.isNotEmpty) ...<Widget>[
+                            const SizedBox(height: AppSpacing.sectionGap),
+                            _GlobalSearchButton(
+                              query: query,
+                              onTap: _searchGlobally,
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -216,8 +257,11 @@ class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
               left: 0,
               right: 0,
               bottom: 24,
+              // Search-results is a sub-state of the Nearby tab — the
+              // prototype highlights "Nearby" here, so keep that lit even
+              // though the route name doesn't match a tab directly.
               child: ListenerBottomNav(
-                currentRouteName: ListenerRoute.nameSearchResults,
+                currentRouteName: ListenerRoute.nameNearbyMasjids,
               ),
             ),
           ],
