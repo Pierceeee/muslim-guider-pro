@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/router/route_names.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
+import '../shared/slide_to_broadcast.dart';
 import 'widgets/analog_clock.dart';
 import 'widgets/maghrib_countdown.dart';
 import 'widgets/mic_lock_indicator.dart';
@@ -64,39 +66,11 @@ class _HomePrayerWidgetMuadhinScreenState
                   remaining: remaining,
                   label: 'TIME UNTIL NEXT PRAYER'),
               const SizedBox(height: 24),
-              _SlidePillEntry(
-                onTap: () {
-                  // Real navigation lands in Task 28 (SlideToBroadcast widget +
-                  // go_router push to /broadcaster/go-live). Stub for now so the
-                  // screen renders.
-                },
+              SlideToBroadcast(
+                onConfirmed: () => context.push(RouteNames.goLive),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SlidePillEntry extends StatelessWidget {
-  const _SlidePillEntry({required this.onTap});
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceInset,
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: AppColors.primary, width: 1.5),
-      ),
-      child: Center(
-        child: TextButton(
-          onPressed: onTap,
-          child: Text('SLIDE TO BROADCAST',
-              style: Theme.of(context).textTheme.labelLarge
-                  ?.copyWith(letterSpacing: 2)),
         ),
       ),
     );
