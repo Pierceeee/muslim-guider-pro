@@ -34,7 +34,16 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final nearbyAsync = ref.watch(nearbyMasjidsProvider);
+    final nearbyAsync = ref.watch(nearbyMasjidsForDiscoveryProvider);
+    final user = ref.watch(ensureSignedInUserProvider).valueOrNull;
+    final initial = (user?.displayName.isNotEmpty ?? false)
+        ? user!.displayName.substring(0, 1).toUpperCase()
+        : '?';
+
+    void goToMasjid(String id) => context.goNamed(
+          ListenerRoute.nameMasjidDetail,
+          pathParameters: <String, String>{'masjidId': id},
+        );
 
     return Scaffold(
       backgroundColor: AppColors.bgDeepNight,
@@ -46,6 +55,7 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
               padding: const EdgeInsets.only(bottom: 140),
               children: <Widget>[
                 _TopBar(
+                  initial: initial,
                   onAvatarTap: () =>
                       context.goNamed(ListenerRoute.nameProfile),
                   onNotificationsTap: () =>
@@ -56,6 +66,7 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
                       const <Masjid>[],
                   onSearchTap: () =>
                       context.goNamed(ListenerRoute.nameSearchResults),
+                  onPinTap: goToMasjid,
                 ),
                 _ContentHeader(
                   count: nearbyAsync.valueOrNull?.length ?? 0,
@@ -71,10 +82,7 @@ class _NearbyMasjidsScreenState extends ConsumerState<NearbyMasjidsScreen> {
                     child: nearbyAsync.when(
                       data: (list) => _MasjidList(
                         masjids: list,
-                        onTap: (id) => context.goNamed(
-                          ListenerRoute.nameMasjidDetail,
-                          pathParameters: <String, String>{'masjidId': id},
-                        ),
+                        onTap: goToMasjid,
                       ),
                       loading: () => const _MasjidListSkeleton(),
                       error: (err, _) => _ListError(message: err.toString()),
@@ -148,9 +156,11 @@ String _pinLabelFor(Masjid m) {
 
 class _TopBar extends StatelessWidget {
   const _TopBar({
+    required this.initial,
     required this.onAvatarTap,
     required this.onNotificationsTap,
   });
+  final String initial;
   final VoidCallback onAvatarTap;
   final VoidCallback onNotificationsTap;
 
@@ -169,7 +179,7 @@ class _TopBar extends StatelessWidget {
             onTap: onAvatarTap,
             child: Center(
               child: Text(
-                'A',
+                initial,
                 style: AppTypography.bodyLg.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w700,
@@ -243,9 +253,14 @@ class _CircleIconButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _MapPanel extends StatelessWidget {
-  const _MapPanel({required this.pins, required this.onSearchTap});
+  const _MapPanel({
+    required this.pins,
+    required this.onSearchTap,
+    required this.onPinTap,
+  });
   final List<Masjid> pins;
   final VoidCallback onSearchTap;
+  final void Function(String masjidId) onPinTap;
 
   @override
   Widget build(BuildContext context) {
@@ -295,19 +310,28 @@ class _MapPanel extends StatelessWidget {
             Positioned(
               top: 60,
               left: 110,
-              child: _MapPin(label: _pinLabelFor(pins[0])),
+              child: _MapPin(
+                label: _pinLabelFor(pins[0]),
+                onTap: () => onPinTap(pins[0].id),
+              ),
             ),
           if (pins.length >= 2)
             Positioned(
               top: 180,
               left: 250,
-              child: _MapPin(label: _pinLabelFor(pins[1])),
+              child: _MapPin(
+                label: _pinLabelFor(pins[1]),
+                onTap: () => onPinTap(pins[1].id),
+              ),
             ),
           if (pins.length >= 3)
             Positioned(
               top: 240,
               left: 80,
-              child: _MapPin(label: _pinLabelFor(pins[2])),
+              child: _MapPin(
+                label: _pinLabelFor(pins[2]),
+                onTap: () => onPinTap(pins[2].id),
+              ),
             ),
           const Positioned(top: 160, left: 160, child: _PulsingUserDot()),
           Positioned(
@@ -375,41 +399,46 @@ class _DottedGridPainter extends CustomPainter {
 }
 
 class _MapPin extends StatelessWidget {
-  const _MapPin({required this.label});
+  const _MapPin({required this.label, required this.onTap});
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 32,
-      height: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Icon(
-            Symbols.location_on_rounded,
-            color: AppColors.primary,
-            size: 36,
-            fill: 1,
-            shadows: <Shadow>[
-              Shadow(
-                color: AppColors.primary.withValues(alpha: 0.4),
-                blurRadius: 10,
-              ),
-            ],
-          ),
-          Positioned(
-            top: 6,
-            child: Text(
-              label,
-              style: AppTypography.labelCaps.copyWith(
-                color: AppColors.bgDeepNight,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 44,
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            Icon(
+              Symbols.location_on_rounded,
+              color: AppColors.primary,
+              size: 36,
+              fill: 1,
+              shadows: <Shadow>[
+                Shadow(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            Positioned(
+              top: 10,
+              child: Text(
+                label,
+                style: AppTypography.labelCaps.copyWith(
+                  color: AppColors.bgDeepNight,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -841,7 +870,7 @@ class _MasjidCard extends StatelessWidget {
 
   String _formatDistance(double km) {
     if (km < 10) return '${km.toStringAsFixed(1)} km';
-    if (km < 100) return '${km.toStringAsFixed(0)} km';
+    if (km < 1000) return '${km.toStringAsFixed(0)} km';
     return '${(km / 1000).toStringAsFixed(0)}k km';
   }
 }

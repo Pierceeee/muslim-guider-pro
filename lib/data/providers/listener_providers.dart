@@ -88,6 +88,19 @@ final nearbyMasjidsProvider = FutureProvider<List<Masjid>>((ref) {
       );
 });
 
+/// Nearby masjids for the discovery surface — drops the user's preferred
+/// masjid the way the prototype's `nearby-masjids.html` does, since the
+/// preferred masjid already has its own hero on the dashboard.
+final nearbyMasjidsForDiscoveryProvider =
+    FutureProvider<List<Masjid>>((ref) async {
+  final allFuture = ref.watch(nearbyMasjidsProvider.future);
+  final preferredFuture = ref.watch(preferredMasjidProvider.future);
+  final all = await allFuture;
+  final preferred = await preferredFuture;
+  if (preferred == null) return all;
+  return all.where((m) => m.id != preferred.id).toList();
+});
+
 /// Featured masjids for the home dashboard.
 final featuredMasjidsProvider = FutureProvider<List<Masjid>>(
   (ref) => ref.watch(masjidRepositoryProvider).getFeatured(),

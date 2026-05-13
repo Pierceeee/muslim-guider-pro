@@ -529,7 +529,7 @@ class _ResultCard extends StatelessWidget {
 
   String _formatDistance(double km) {
     if (km < 10) return '${km.toStringAsFixed(1)} km';
-    if (km < 100) return '${km.toStringAsFixed(0)} km';
+    if (km < 1000) return '${km.toStringAsFixed(0)} km';
     return '${(km / 1000).toStringAsFixed(0)}k km';
   }
 }
