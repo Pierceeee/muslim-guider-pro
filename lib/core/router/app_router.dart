@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/user.dart';
 import '../../features/auth/sign_in_screen.dart';
+import '../../features/broadcaster/dashboard/masjid_dashboard_screen.dart';
 import '../../features/broadcaster/home/home_prayer_widget_screen.dart';
 import '../../features/listener/stub_listener_home.dart';
 import '../../providers/current_user_provider.dart';
@@ -50,8 +51,7 @@ GoRouter buildAppRouter(ProviderContainer container) {
           ),
           GoRoute(
             path: RouteNames.broadcasterDashboard,
-            builder: (context, state) =>
-                const _PlaceholderScreen('Broadcaster Dashboard (placeholder)'),
+            builder: (context, state) => const MasjidDashboardScreen(),
           ),
           GoRoute(
             path: RouteNames.broadcasterNearby,

@@ -34,7 +34,7 @@ class _LiveIndicatorState extends State<LiveIndicator>
         children: [
           AnimatedBuilder(
             animation: _pulse,
-            builder: (_, __) => Container(
+            builder: (_, child) => Container(
               width: 8 + _pulse.value * 4,
               height: 8 + _pulse.value * 4,
               decoration: const BoxDecoration(
