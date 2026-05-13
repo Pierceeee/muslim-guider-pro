@@ -615,7 +615,7 @@ class _SummaryCard extends StatelessWidget {
                 child: Text(
                   distance == null
                       ? masjid.displayAddress
-                      : '${masjid.displayAddress} · ${distance.toStringAsFixed(1)} km',
+                      : '${masjid.displayAddress} · ${_formatDistance(distance)}',
                   style: AppTypography.bodyMd.copyWith(
                     color: AppColors.inkMuted,
                   ),
@@ -654,6 +654,15 @@ class _SummaryCard extends StatelessWidget {
         StreamPrayer.dhikr => 'Dhikr',
         null => 'Live',
       };
+
+  // Mirrors the formatter on `nearby_masjids_screen` / `search_results_screen`
+  // so the summary card doesn't render unwieldy "10684.0 km" for far-away
+  // masjids reached via search.
+  static String _formatDistance(double km) {
+    if (km < 10) return '${km.toStringAsFixed(1)} km';
+    if (km < 1000) return '${km.toStringAsFixed(0)} km';
+    return '${(km / 1000).toStringAsFixed(0)}k km';
+  }
 }
 
 class _VerifiedChip extends StatelessWidget {
@@ -869,35 +878,73 @@ class _PrayerTimesPanel extends StatelessWidget {
   String _fmt(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  /// Returns the daily-prayer index (0..4) to highlight, or -1 for none.
+  /// When a live stream is in flight, follow its `StreamPrayer`. When no
+  /// stream is broadcasting, fall back to the next upcoming prayer derived
+  /// from the current wall clock (mirroring the dashboard's behavior) —
+  /// not a hardcoded ASR default.
+  int _resolveActiveIndex() {
+    switch (activePrayer) {
+      case StreamPrayer.fajr:
+        return 0;
+      case StreamPrayer.dhuhr:
+        return 1;
+      case StreamPrayer.asr:
+        return 2;
+      case StreamPrayer.maghrib:
+        return 3;
+      case StreamPrayer.isha:
+        return 4;
+      case StreamPrayer.jumuah:
+      case StreamPrayer.khutbah:
+      case StreamPrayer.dhikr:
+        return -1;
+      case null:
+        break;
+    }
+    final now = DateTime.now();
+    final times = <DateTime>[
+      schedule.fajr,
+      schedule.dhuhr,
+      schedule.asr,
+      schedule.maghrib,
+      schedule.isha,
+    ];
+    for (var i = 0; i < times.length; i++) {
+      if (times[i].isAfter(now)) return i;
+    }
+    // Past Isha — wrap to tomorrow's Fajr.
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activeIndex = _resolveActiveIndex();
     final cells = <_PrayerCellData>[
       _PrayerCellData(
         label: 'FAJR',
         time: _fmt(schedule.fajr),
-        isActive: activePrayer == StreamPrayer.fajr,
+        isActive: activeIndex == 0,
       ),
       _PrayerCellData(
         label: 'DHUHR',
         time: _fmt(schedule.dhuhr),
-        isActive: activePrayer == StreamPrayer.dhuhr,
+        isActive: activeIndex == 1,
       ),
       _PrayerCellData(
         label: 'ASR',
         time: _fmt(schedule.asr),
-        // If no live stream is in flight, fall back to ASR as the prototype's
-        // visual hero pick. Real "current prayer" computation lives in B5.
-        isActive: activePrayer == StreamPrayer.asr || activePrayer == null,
+        isActive: activeIndex == 2,
       ),
       _PrayerCellData(
         label: 'MAGHR',
         time: _fmt(schedule.maghrib),
-        isActive: activePrayer == StreamPrayer.maghrib,
+        isActive: activeIndex == 3,
       ),
       _PrayerCellData(
         label: 'ISHA',
         time: _fmt(schedule.isha),
-        isActive: activePrayer == StreamPrayer.isha,
+        isActive: activeIndex == 4,
       ),
     ];
 
