@@ -10,7 +10,7 @@ void main() {
 
   testWidgets('AppTheme.dark uses brand primary and deep-night scaffold',
       (tester) async {
-    final theme = AppTheme.dark;
+    final theme = AppTheme.dark();
     expect(theme.brightness, Brightness.dark);
     expect(theme.colorScheme.primary, AppColors.primary);
     expect(theme.scaffoldBackgroundColor, AppColors.bgDeepNight);

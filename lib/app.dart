@@ -19,7 +19,7 @@ class _MuslimGuiderProAppState extends ConsumerState<MuslimGuiderProApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Muslim Guider Pro',
-      theme: AppTheme.dark,
+      theme: AppTheme.dark(),
       supportedLocales: const [Locale('en'), Locale('ar')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
