@@ -29,7 +29,7 @@ class _SlideToBroadcastState extends State<SlideToBroadcast>
   bool _fired = false;
 
   late final AnimationController _animController;
-  late Animation<double> _anim;
+  Animation<double>? _anim;
 
   @override
   void initState() {
@@ -46,7 +46,10 @@ class _SlideToBroadcastState extends State<SlideToBroadcast>
     super.dispose();
   }
 
+  void _onAnimTick() => setState(() => _dragX = _anim!.value);
+
   void _onDragUpdate(DragUpdateDetails d) {
+    if (_maxX == 0) return;
     if (_fired) return;
     _animController.stop();
     setState(() {
@@ -75,12 +78,13 @@ class _SlideToBroadcastState extends State<SlideToBroadcast>
   }
 
   void _animateTo(double target, {VoidCallback? onDone}) {
+    _animController.stop();
+    _anim?.removeListener(_onAnimTick);
     final start = _dragX;
     _anim = Tween<double>(begin: start, end: target).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    )..addListener(() {
-        if (mounted) setState(() => _dragX = _anim.value);
-      });
+    );
+    _anim!.addListener(_onAnimTick);
     _animController.forward(from: 0).whenCompleteOrCancel(() {
       onDone?.call();
     });
