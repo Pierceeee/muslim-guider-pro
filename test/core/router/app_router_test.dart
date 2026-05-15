@@ -44,7 +44,7 @@ void main() {
     final auth = MockAuthRepository();
     await auth.signIn('u_imam_yusuf');
     await pumpApp(tester, auth, settle: false);
-    expect(find.text('MUADHIN'), findsOneWidget);
+    expect(find.textContaining('MUADHIN'), findsOneWidget);
   });
 
   testWidgets('Listener lands on listener home', (tester) async {

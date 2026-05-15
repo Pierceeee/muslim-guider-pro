@@ -9,8 +9,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(body: RoleBadge(masjidName: 'MASJID AL-ABRAR')),
     ));
-    expect(find.text('MUADHIN'), findsOneWidget);
-    expect(find.text('MASJID AL-ABRAR'), findsOneWidget);
+    expect(find.text('MUADHIN · MASJID AL-ABRAR'), findsOneWidget);
   });
 
   testWidgets('MaghribCountdown formats mm:ss', (tester) async {

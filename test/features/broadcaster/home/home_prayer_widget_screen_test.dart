@@ -23,7 +23,7 @@ void main() {
     // Single pump only — AnalogClock has an infinite animation so pumpAndSettle would hang.
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('MUADHIN'), findsOneWidget);
+    expect(find.textContaining('MUADHIN'), findsOneWidget);
     expect(find.text('SLIDE TO BROADCAST'), findsOneWidget);
   });
 }

@@ -50,7 +50,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Step 2: Home — MUADHIN badge confirms the Muadhin role.
-    expect(find.text('MUADHIN'), findsOneWidget);
+    expect(find.textContaining('MUADHIN'), findsOneWidget);
 
     // Step 3: Navigate to Dashboard tab via bottom nav.
     await tester.tap(find.text('Dashboard'));
