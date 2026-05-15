@@ -12,7 +12,7 @@ import '../../../providers/repository_providers.dart';
 import 'live_broadcast_controller.dart';
 import 'widgets/listener_counter.dart';
 import 'widgets/live_timer.dart';
-import 'widgets/volume_meter.dart';
+import '../../../core/widgets/mic_level_meter.dart';
 
 class LiveBroadcastScreen extends ConsumerWidget {
   const LiveBroadcastScreen({super.key, required this.streamId});
@@ -72,7 +72,7 @@ class LiveBroadcastScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Center(child: ListenerCounter(count: tick.listenerCount)),
                 const SizedBox(height: 24),
-                VolumeMeter(level: micLevel),
+                MicLevelMeter(level0to1: micLevel),
                 const SizedBox(height: 40),
                 FilledButton(
                   style: FilledButton.styleFrom(
