@@ -38,7 +38,14 @@ dependencies:
   go_router: ^14.0.0
   intl: ^0.20.2
   hijri: ^3.0.0
-  noise_meter: ^5.0.0
+  flutter_svg: ^2.0.10
+  material_symbols_icons: ^4.2901.0
+  record: ^5.1.2
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  adhan_dart: ^2.0.1
+  geolocator: ^13.0.1
+  flutter_compass: ^0.8.1
   permission_handler: ^11.3.1
   google_fonts: ^6.2.1
 
