@@ -14,15 +14,19 @@ void main() {
     expect(find.text("TODAY'S BROADCASTS"), findsOneWidget);
   });
 
-  testWidgets('NextBroadcastCard shows prayer name and time', (tester) async {
+  testWidgets('NextBroadcastCard shows prayer name and countdown', (tester) async {
+    // Use a future time so the countdown is "in X min" not "starting soon"
+    final future = DateTime.now().add(const Duration(hours: 1, minutes: 24));
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(body: NextBroadcastCard(
-        prayerName: 'Maghrib',
-        at: DateTime(2026, 5, 13, 19, 30),
+        prayerName: 'Asr',
+        at: future,
       )),
     ));
-    expect(find.text('Maghrib'), findsOneWidget);
-    expect(find.text('19:30'), findsOneWidget);
+    expect(find.text('NEXT BROADCAST'), findsOneWidget);
+    expect(find.text('Asr'), findsOneWidget);
+    expect(find.textContaining('in '), findsOneWidget);
+    expect(find.text('Go Live now'), findsOneWidget);
   });
 
   testWidgets('RecentBroadcastsList renders one row per entry', (tester) async {
