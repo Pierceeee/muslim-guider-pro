@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0.00 0.00 512.00 512.00">
+<rect fill="#000000" x="267.84" y="90.36" width="23.70" height="331.28" rx="10.11"/>
+<rect fill="#000000" x="125.73" y="132.95" width="23.68" height="246.10" rx="10.12"/>
+<rect fill="#000000" x="315.21" y="132.98" width="23.68" height="246.04" rx="10.13"/>
+<rect fill="#000000" x="-11.85" y="-85.08" transform="translate(232.31,256.00) rotate(-0.1)" width="23.70" height="170.16" rx="10.08"/>
+<rect fill="#000000" x="78.37" y="173.40" width="23.70" height="165.06" rx="10.10"/>
+<rect fill="#000000" x="409.95" y="173.47" width="23.68" height="165.06" rx="10.09"/>
+<rect fill="#000000" x="-11.83" y="-52.47" transform="translate(42.84,256.00) rotate(-0.1)" width="23.66" height="104.94" rx="10.08"/>
+<rect fill="#000000" x="-11.85" y="-52.45" transform="translate(374.42,256.00) rotate(-0.1)" width="23.70" height="104.90" rx="10.11"/>
+<rect fill="#000000" x="-11.84" y="-52.47" transform="translate(469.16,256.00) rotate(-0.1)" width="23.68" height="104.94" rx="10.10"/>
+<rect fill="#000000" x="-11.85" y="-43.29" transform="translate(184.95,256.00) rotate(-0.1)" width="23.70" height="86.58" rx="10.11"/>
+</svg>
