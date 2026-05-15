@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:muslim_guider_pro/features/broadcaster/home/widgets/maghrib_countdown.dart';
-import 'package:muslim_guider_pro/features/broadcaster/home/widgets/mic_lock_indicator.dart';
+import 'package:muslim_guider_pro/core/widgets/prayer_widget/mic_lock_indicator.dart';
 import 'package:muslim_guider_pro/features/broadcaster/home/widgets/role_badge.dart';
 
 void main() {
