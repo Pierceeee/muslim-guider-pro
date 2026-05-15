@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:muslim_guider_pro/data/models/broadcast_stream.dart';
 import 'package:muslim_guider_pro/features/broadcaster/dashboard/widgets/kpi_tile.dart';
@@ -11,7 +11,7 @@ void main() {
       home: Scaffold(body: KpiTile(label: "Today's Broadcasts", value: '3')),
     ));
     expect(find.text('3'), findsOneWidget);
-    expect(find.text("Today's Broadcasts"), findsOneWidget);
+    expect(find.text("TODAY'S BROADCASTS"), findsOneWidget);
   });
 
   testWidgets('NextBroadcastCard shows prayer name and time', (tester) async {

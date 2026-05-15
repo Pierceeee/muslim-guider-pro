@@ -27,10 +27,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Masjid Al-Abrar'), findsOneWidget);
-    expect(find.text("Today's Broadcasts"), findsOneWidget);
-    expect(find.text('Avg Listeners'), findsOneWidget);
-    expect(find.text('Stream Quality'), findsOneWidget);
-    expect(find.text('Uptime'), findsOneWidget);
+    expect(find.text("TODAY'S BROADCASTS"), findsOneWidget);
+    expect(find.text('AVG LISTENERS'), findsOneWidget);
+    expect(find.text('STREAM QUALITY'), findsOneWidget);
+    expect(find.text('UPTIME'), findsOneWidget);
     expect(find.text('SLIDE TO BROADCAST'), findsOneWidget);
   });
 }
