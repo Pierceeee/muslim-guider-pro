@@ -3,20 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:muslim_guider_pro/core/theme/app_text_styles.dart';
 
 void main() {
-  setUpAll(() {
-    TestWidgetsFlutterBinding.ensureInitialized();
-  });
-
-  testWidgets('displayLarge is 56pt bold for the timer', (tester) async {
-    expect(AppTextStyles.displayLarge.fontSize, 56);
-    expect(AppTextStyles.displayLarge.fontWeight, FontWeight.w700);
-  });
-  testWidgets('headlineLarge is 28pt bold', (tester) async {
-    expect(AppTextStyles.headlineLarge.fontSize, 28);
-    expect(AppTextStyles.headlineLarge.fontWeight, FontWeight.w700);
-  });
-  testWidgets('bodyLarge is 16pt regular', (tester) async {
-    expect(AppTextStyles.bodyLarge.fontSize, 16);
-    expect(AppTextStyles.bodyLarge.fontWeight, FontWeight.w400);
+  TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('AppTextStyles exposes prototype roles', (_) async {
+    expect(AppTextStyles.headlineXl().fontSize, 40);
+    expect(AppTextStyles.headlineLg().fontSize, 28);
+    expect(AppTextStyles.headlineMd().fontSize, 24);
+    expect(AppTextStyles.bodyLg().fontSize, 16);
+    expect(AppTextStyles.bodyMd().fontSize, 14);
+    expect(AppTextStyles.labelCaps().fontSize, 11);
+    expect(AppTextStyles.labelCaps().letterSpacing, closeTo(0.88, 0.01));
+    expect(AppTextStyles.numeralTime().fontWeight, FontWeight.w700);
   });
 }
