@@ -11,7 +11,7 @@ import '../../features/broadcaster/summary/broadcast_summary_screen.dart';
 import '../../features/broadcaster/home/home_prayer_widget_screen.dart';
 import '../../features/listener/stub_listener_home.dart';
 import '../../providers/current_user_provider.dart';
-import '../widgets/app_bottom_nav.dart';
+import '../widgets/floating_pill_nav.dart';
 import '../widgets/stub_screen.dart';
 import 'route_names.dart';
 
@@ -154,10 +154,20 @@ class _BroadcasterShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (i) => GoRouter.of(context).go(_tabs[i]),
+      extendBody: true,
+      body: Stack(
+        children: [
+          Positioned.fill(child: child),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: FloatingPillNav(
+              currentIndex: _currentIndex,
+              onTap: (i) => GoRouter.of(context).go(_tabs[i]),
+            ),
+          ),
+        ],
       ),
     );
   }
