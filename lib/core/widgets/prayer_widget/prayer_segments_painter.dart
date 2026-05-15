@@ -18,7 +18,6 @@ class PrayerSegmentsPainter extends CustomPainter {
     final outerR = size.width / 2;
     final innerR = outerR * (120 / 165);
     final ringRect = Rect.fromCircle(center: center, radius: outerR);
-    final layerBounds = Rect.fromCircle(center: center, radius: outerR);
 
     // Layer 1: rotated colored segments with inner hole punched out.
     canvas.save();
@@ -26,7 +25,7 @@ class PrayerSegmentsPainter extends CustomPainter {
     canvas.rotate(rotation);
     canvas.translate(-center.dx, -center.dy);
 
-    canvas.saveLayer(layerBounds, Paint());
+    canvas.saveLayer(ringRect, Paint());
     final segPaint = Paint()..style = PaintingStyle.fill;
     for (final s in _stops) {
       final startRad = (s.start - 90) * math.pi / 180;
