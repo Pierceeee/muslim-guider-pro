@@ -16,6 +16,373 @@
 
 ---
 
+## ⚠ MANDATORY PRE-EXECUTION AMENDMENTS
+
+This section captures fixes from a code-review pass on the original plan. Every implementation subagent MUST consult this section before pasting code from the corresponding task. If a task body and an amendment disagree, the amendment wins.
+
+### Amendment 0 — Insert a new Task 0 before Task 1
+
+Consolidate all new pubspec dependencies into one upfront task to avoid 6 separate `flutter pub get` cycles and one stale entry. Run this FIRST.
+
+**Task 0: Consolidate pubspec dependencies**
+
+- [ ] **Step 1:** In `pubspec.yaml` under `dependencies:`, add the following (preserve existing entries):
+
+```yaml
+  flutter_svg: ^2.0.10
+  google_fonts: ^6.2.1                # already present — leave as is
+  material_symbols_icons: ^4.2901.0
+  record: ^5.1.2
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  adhan_dart: ^3.2.0                  # see Amendment 9 — verify package name first
+  geolocator: ^13.0.1
+  flutter_compass: ^0.8.1
+  permission_handler: ^11.3.1         # already present — leave as is
+```
+
+- [ ] **Step 2:** Remove `noise_meter: ^5.0.0` from `dependencies:` — it is replaced by `record`'s `onAmplitudeChanged` stream.
+
+- [ ] **Step 3:** Run `flutter pub get`. Expected: clean resolve, no version conflicts.
+
+- [ ] **Step 4:** Verify `record` and `adhan_dart` package APIs match what the plan assumes (see Amendments 8 + 9). If pub.dev shows different names or signatures, update the amendments BEFORE Tasks 30/32 run.
+
+- [ ] **Step 5:** Commit.
+
+```
+git add pubspec.yaml pubspec.lock
+git commit -m "chore(deps): consolidate new dependencies for prototype-alignment plan"
+```
+
+Then continue with Task 1 — but skip Task 1 Step 3 (the per-task `flutter_svg` add) and Task 4 Step 1 (the per-task `material_symbols_icons` add), because Task 0 already added them.
+
+---
+
+### Amendment 1 — Task 5: `ColorScheme.dark(...)` is not const
+
+In `AppTheme.dark()`, change:
+
+```dart
+colorScheme: const ColorScheme.dark(
+```
+
+to:
+
+```dart
+colorScheme: ColorScheme.dark(
+```
+
+`ColorScheme.dark` is a non-const generative constructor in current Flutter SDKs.
+
+---
+
+### Amendment 2 — Task 7: `BackdropFilter` inside `bottomNavigationBar` will not blur
+
+`bottomNavigationBar` is composited in a separate slot from `body`, so a `BackdropFilter` there sees no underlying pixels. To make the blur actually visible:
+
+1. In `_BroadcasterShell.build` (`lib/core/router/app_router.dart`), set `extendBody: true` on the Scaffold AND move the nav out of `bottomNavigationBar` into a `Stack` overlay over the body:
+
+```dart
+return Scaffold(
+  extendBody: true,
+  body: Stack(
+    children: [
+      Positioned.fill(child: child),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: FloatingPillNav(
+          currentIndex: _currentIndex,
+          onTap: (i) => GoRouter.of(context).go(_tabs[i]),
+        ),
+      ),
+    ],
+  ),
+);
+```
+
+2. `FloatingPillNav` itself stays as written (the `BackdropFilter` + `ClipRRect` are correct now that there are pixels behind it).
+
+---
+
+### Amendment 3 — Task 9: `HijriCalendar.toFormat` does not exist in `hijri ^3.0.0`
+
+Replace the line:
+
+```dart
+final hijri = HijriCalendar.fromDate(now).toFormat('dd MMMM yyyy');
+```
+
+with:
+
+```dart
+final h = HijriCalendar.fromDate(now);
+final hijri = '${h.hDay} ${h.longMonthName} ${h.hYear}';
+```
+
+Apply the same fix anywhere else the plan calls `toFormat()` on a `HijriCalendar`.
+
+---
+
+### Amendment 4 — Task 10: Painter draw order — separators must be drawn AFTER the rotation transform is unwound, AND the saveLayer must be bounded
+
+Replace the entire `paint()` body in `PrayerSegmentsPainter` with:
+
+```dart
+@override
+void paint(Canvas canvas, Size size) {
+  final center = size.center(Offset.zero);
+  final outerR = size.width / 2;
+  final innerR = outerR * (120 / 165);
+  final ringRect = Rect.fromCircle(center: center, radius: outerR);
+  final layerBounds = Rect.fromCircle(center: center, radius: outerR);
+
+  // Layer 1: rotated colored segments with inner hole punched out.
+  canvas.save();
+  canvas.translate(center.dx, center.dy);
+  canvas.rotate(rotation);
+  canvas.translate(-center.dx, -center.dy);
+
+  canvas.saveLayer(layerBounds, Paint());
+  final segPaint = Paint()..style = PaintingStyle.fill;
+  for (final s in _stops) {
+    final startRad = (s.start - 90) * math.pi / 180;
+    final sweepRad = (s.end - s.start) * math.pi / 180;
+    segPaint.color = s.color;
+    canvas.drawArc(ringRect, startRad, sweepRad, true, segPaint);
+  }
+  canvas.drawCircle(center, innerR, Paint()..blendMode = BlendMode.clear);
+  canvas.restore(); // matches saveLayer
+  canvas.restore(); // matches rotation save
+
+  // Layer 2: gold separator bars at the segment boundaries, painted on the
+  // un-rotated root canvas — but with `rotation` added to each angle so they
+  // align with the rotated segment edges.
+  final goldPaint = Paint()..color = const Color(0xFFDAA03C);
+  final scale = size.width / 330;
+  final barW = 46.0 * scale;
+  final barH = 6.0 * scale;
+  for (final angle in [0.0, 70.0, 185.0, 315.0]) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate((angle * math.pi / 180) + rotation - math.pi / 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(outerR - barW, -barH / 2, barW, barH),
+        const Radius.circular(1.5),
+      ),
+      goldPaint,
+    );
+    canvas.restore();
+  }
+}
+```
+
+Key changes: bounded `saveLayer` (no `Rect.largest`), explicit comments on the save/restore balance (now 2 saves / 2 restores in Layer 1), and gold separators painted in Layer 2 after the rotation is fully unwound — but with `rotation` added to each angle so they align with the segment boundaries.
+
+---
+
+### Amendment 5 — Task 11: Adhan top pointer — apply `_s()` scaling and pin horizontal position
+
+Replace the top-pointer `Positioned` block at the end of `PrayerWidget`'s Stack with:
+
+```dart
+Positioned(
+  top: _s(8),
+  left: size / 2 - _s(10),
+  child: Transform.rotate(
+    angle: math.pi,
+    child: SvgPicture.asset('assets/svg/qibla_direction.svg', width: _s(20), height: _s(16)),
+  ),
+),
+```
+
+This keeps the pointer centered horizontally regardless of `size`, and the dimensions scale proportionally.
+
+---
+
+### Amendment 6 — Task 21: `BigRedBroadcastButton` is "tap & hold", not "tap"
+
+The label, the prototype copy, and the safety rationale all say tap-and-hold. The plan currently fires on `onTapUp`. Replace the `GestureDetector` block with:
+
+```dart
+return GestureDetector(
+  onLongPressDown: (_) => setState(() => _pressed = true),
+  onLongPressCancel: () => setState(() => _pressed = false),
+  onLongPressEnd: (_) => setState(() => _pressed = false),
+  onLongPress: () {
+    setState(() => _pressed = false);
+    widget.onConfirmed();
+  },
+  child: AnimatedScale(
+    // ...rest unchanged
+  ),
+);
+```
+
+Default `Duration` for `onLongPress` is ~500ms, which matches the prototype's "tap & hold" affordance.
+
+---
+
+### Amendment 7 — Task 23: `AudioWaveform` leaks its stream subscription
+
+Add a `StreamSubscription` field and cancel it in `dispose`. Updated state class:
+
+```dart
+class _AudioWaveformState extends State<AudioWaveform> {
+  late final List<double> _samples;
+  final _rand = math.Random();
+  StreamSubscription<double>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _samples = List.generate(widget.barCount, (_) => 0.2 + _rand.nextDouble() * 0.6);
+    _sub = widget.levelStream.listen(_onLevel);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  // _onLevel and build unchanged
+}
+```
+
+Also add `import 'dart:async';` at the top of the file.
+
+---
+
+### Amendment 8 — Task 30: `requestPermission` must actually request, and verify `record` API
+
+`AudioRecorder.hasPermission()` only queries. Replace `RealAudioRecorder.requestPermission` with:
+
+```dart
+@override
+Future<void> requestPermission() async {
+  await Permission.microphone.request();
+}
+```
+
+Add at the top of the file:
+
+```dart
+import 'package:permission_handler/permission_handler.dart';
+```
+
+(`permission_handler` is already in pubspec via Task 0.)
+
+Also: BEFORE pasting the rest of `RealAudioRecorder`, run `flutter pub get` and `flutter pub deps` to confirm `record: ^5.1.2` resolved. Open `.dart_tool/package_config.json` if needed and verify the `AudioRecorder` class + `onAmplitudeChanged(Duration)` API. If the API differs from what the plan assumes, append a note to this amendments section and adjust before continuing.
+
+---
+
+### Amendment 9 — Task 32: verify `adhan_dart` package name, and prayer-time getters are nullable
+
+1. **Verify package name.** The plan pins `adhan_dart: ^3.2.0`. On pub.dev the canonical Adhan package may be published as `adhan` (without `_dart`). Before Task 32 runs, check pub.dev. If the package is actually `adhan`, update the pubspec entry in Task 0 and the import in Task 32 from `package:adhan_dart/adhan_dart.dart` to `package:adhan/adhan.dart`.
+
+2. **Null-safety on prayer times.** Replace:
+
+```dart
+return model.PrayerTimes(
+  fajr: pt.fajr!.toLocal(),
+  sunrise: pt.sunrise!.toLocal(),
+  // ...
+);
+```
+
+with:
+
+```dart
+DateTime _req(DateTime? t, String name) =>
+    t ?? (throw StateError('adhan returned null for $name — invalid coords?'));
+return model.PrayerTimes(
+  fajr: _req(pt.fajr, 'fajr').toLocal(),
+  sunrise: _req(pt.sunrise, 'sunrise').toLocal(),
+  dhuhr: _req(pt.dhuhr, 'dhuhr').toLocal(),
+  asr: _req(pt.asr, 'asr').toLocal(),
+  maghrib: _req(pt.maghrib, 'maghrib').toLocal(),
+  isha: _req(pt.isha, 'isha').toLocal(),
+);
+```
+
+This gives a clear error at the boundary (polar latitudes / invalid coords) instead of a bare null-check crash deep in the widget tree.
+
+---
+
+### Amendment 10 — Task 33: `FlutterCompass.events` is nullable; non-null assertion crashes on web/desktop and on Android devices without a magnetometer
+
+Replace the body of `QiblaService.bearingTo` from `return FlutterCompass.events!.map(...)` onward with:
+
+```dart
+final events = FlutterCompass.events;
+if (events == null) return const Stream<double>.empty();
+return events.map((e) {
+  final heading = e.heading ?? 0;
+  return (qiblaBearingFromNorth - heading + 360) % 360;
+});
+```
+
+Consumers of `qiblaDirectionProvider` should also handle the empty-stream case (default to a static qibla angle if no compass data has arrived).
+
+---
+
+### Amendment 11 — Task 18 must run BEFORE Tasks 15-17
+
+The dashboard widgets re-skinned in Tasks 15-17 either use or live alongside `SlideToBroadcast`. Task 18 moves and refactors `SlideToBroadcast` into `lib/core/widgets/` with `dashboard`/`home` variants. Execute Task 18 first.
+
+New execution order for Phase 2: **7, 8, 9, 10, 11, 12, 13, 18, 15, 16, 17, 19, 20, 21, 22, 23, 24.**
+
+(Task numbers in this document are unchanged; only the run order shifts.)
+
+---
+
+### Amendment 12 — Task 28: clarify which audio source Phase 3 reads
+
+In Task 28 Step 1 (re-skin `LiveBroadcastScreen`), replace the parenthetical "for Phase 3 still use the existing `micLevelProvider`" with the explicit rule:
+
+> Phase 3 reads ONLY from `micLevelProvider`. Do NOT import `audioRecorderRepositoryProvider` in this task. The source swap from sine-wave fallback to real microphone amplitude is performed exclusively by Task 30 Step 4.
+
+---
+
+### Amendment 13 — Task 34: enumerate exact test files that need updating
+
+When applying Task 34 Step 1, audit and update the following test files (each was authored against the old visual tree and will fail after Phase 2-3):
+
+```
+test/core/widgets/app_bottom_nav_test.dart           — delete or rewrite to FloatingPillNav
+test/core/router/app_router_test.dart                — assertions on bottomNavigationBar slot
+test/features/broadcaster/home/home_prayer_widget_screen_test.dart  — new widget tree
+test/features/broadcaster/home/widgets/role_badge_test.dart         — new pill style
+test/features/broadcaster/live/widgets/volume_meter_test.dart       — renamed to mic_level_meter_test.dart
+test/features/broadcaster/live/live_broadcast_screen_test.dart      — Banner/Waveform/Stats grid
+test/features/broadcaster/summary/broadcast_summary_screen_test.dart — RetentionChart, success banner
+test/features/broadcaster/dashboard/masjid_dashboard_screen_test.dart — new KPI grid layout
+test/integration/broadcaster_happy_path_test.dart    — full-flow happy path against new screens
+```
+
+For each: run the test, capture the failing assertion, update to the new widget API, re-run, confirm green.
+
+---
+
+### Amendment 14 — Scope defer: prototype screens that are NOT in this plan
+
+The following broadcaster-side prototype screens are intentionally out of scope and will get a follow-up plan:
+
+- `prototype/screens/schedule-broadcast-muadhin.html`
+- `prototype/screens/audit-log-muadhin.html`
+- `prototype/screens/profile.html`
+- `prototype/screens/verification-history.html`
+- `prototype/screens/verification-status-masjid-al-abrar.html`
+- `prototype/screens/permissions-bundle.html`
+- `prototype/screens/inbox.html`
+
+If a routing dead-end appears (e.g. a button in this plan navigates to one of these screens), leave the existing `StubScreen` placeholder in place and move on.
+
+---
+
 ## Reference Map
 
 When a task says "match the prototype", read the HTML file and translate its Tailwind tokens to Flutter using the design-system tables in Tasks 2 and 3. Token names are identical across prototype and Flutter — only the value-binding layer changes.
