@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
-import '../shared/slide_to_broadcast.dart';
+import '../../../core/widgets/slide_to_broadcast.dart';
 import 'widgets/analog_clock.dart';
 import 'widgets/maghrib_countdown.dart';
 import '../../../core/widgets/prayer_widget/mic_lock_indicator.dart';
@@ -68,6 +68,7 @@ class _HomePrayerWidgetMuadhinScreenState
               const SizedBox(height: 24),
               SlideToBroadcast(
                 onConfirmed: () => context.push(RouteNames.goLive),
+                variant: SlideToBroadcastVariant.home,
               ),
             ],
           ),

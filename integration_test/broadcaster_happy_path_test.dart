@@ -15,7 +15,7 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_auth_repository.da
 import 'package:muslim_guider_pro/data/repositories/mock/mock_broadcast_repository.dart';
 import 'package:muslim_guider_pro/data/repositories/mock/mock_masjid_repository.dart';
 import 'package:muslim_guider_pro/data/repositories/mock/mock_schedule_repository.dart';
-import 'package:muslim_guider_pro/features/broadcaster/shared/slide_to_broadcast.dart';
+import 'package:muslim_guider_pro/core/widgets/slide_to_broadcast.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
 

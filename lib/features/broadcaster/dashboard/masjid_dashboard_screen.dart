@@ -6,7 +6,7 @@ import '../../../core/router/route_names.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
 import '../../../providers/recent_broadcasts_provider.dart';
-import '../shared/slide_to_broadcast.dart';
+import '../../../core/widgets/slide_to_broadcast.dart';
 import 'widgets/kpi_tile.dart';
 import 'widgets/next_broadcast_card.dart';
 import 'widgets/recent_broadcasts_list.dart';
