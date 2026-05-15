@@ -40,6 +40,7 @@ dependencies:
   hijri: ^3.0.0
   flutter_svg: ^2.0.10
   material_symbols_icons: ^4.2901.0
+  noise_meter: ^5.0.0
   record: ^5.1.2
   path_provider: ^2.1.4
   shared_preferences: ^2.3.2
@@ -72,6 +73,9 @@ flutter:
     - assets/svg/middle_circle/
     - assets/svg/moon/
     - assets/svg/new_icons/
+    - assets/svg/profile_svg/
+    - assets/svg/sun/
+    - assets/svg/surah_name/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
