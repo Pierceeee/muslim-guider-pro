@@ -26,7 +26,7 @@ abstract class AppTheme {
       displayLarge: AppTextStyles.headlineXl(color: AppColors.primary),
       headlineLarge: AppTextStyles.headlineLg(color: AppColors.inkPrimary),
       headlineMedium: AppTextStyles.headlineMd(color: AppColors.inkPrimary),
-      titleLarge: AppTextStyles.bodyLg(color: AppColors.inkPrimary),
+      titleLarge: AppTextStyles.headlineMd(color: AppColors.inkPrimary),
       bodyLarge: AppTextStyles.bodyLg(color: AppColors.inkPrimary),
       bodyMedium: AppTextStyles.bodyMd(color: AppColors.inkMuted),
       labelLarge: AppTextStyles.labelCaps(color: AppColors.inkPrimary),

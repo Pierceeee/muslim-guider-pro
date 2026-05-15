@@ -55,5 +55,5 @@ abstract class AppTextStyles {
       );
 
   static TextStyle arabic({double fontSize = 16, Color color = AppColors.inkPrimary}) =>
-      GoogleFonts.notoNaskhArabic(fontSize: fontSize, fontWeight: FontWeight.w500, color: color);
+      GoogleFonts.notoNaskhArabic(fontSize: fontSize, height: 1.5, fontWeight: FontWeight.w500, color: color);
 }
