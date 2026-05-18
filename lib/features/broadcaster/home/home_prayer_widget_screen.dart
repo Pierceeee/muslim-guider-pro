@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/prayer_format.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/bg_pattern.dart';
 import '../../../core/widgets/prayer_widget/current_prayer_card.dart';
@@ -13,7 +13,6 @@ import '../../../core/widgets/prayer_widget/mic_lock_indicator.dart';
 import '../../../core/widgets/prayer_widget/prayer_widget.dart';
 import '../../../core/widgets/slide_to_broadcast.dart';
 import '../../../core/widgets/time_date_stack.dart';
-import '../../../data/models/prayer_times.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
 import 'widgets/role_badge.dart';
@@ -28,30 +27,6 @@ class HomePrayerWidgetMuadhinScreen extends ConsumerStatefulWidget {
 
 class _HomePrayerWidgetMuadhinScreenState
     extends ConsumerState<HomePrayerWidgetMuadhinScreen> {
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  static String _two(int n) => n.toString().padLeft(2, '0');
-
-  static String _formatHHMM(Duration d) {
-    if (d == Duration.zero) return '--:--';
-    return '${_two(d.inHours)}:${_two(d.inMinutes.remainder(60))}';
-  }
-
-  static String _prayerLabel(Prayer p) {
-    return switch (p) {
-      Prayer.fajr => 'Fajr',
-      Prayer.dhuhr => 'Dhuhr',
-      Prayer.asr => 'Asr',
-      Prayer.maghrib => 'Maghrib',
-      Prayer.isha => 'Isha',
-    };
-  }
-
-  static String _formatTime(DateTime? dt) {
-    if (dt == null) return '--:--';
-    return DateFormat('HH:mm').format(dt);
-  }
-
   @override
   Widget build(BuildContext context) {
     final masjid = ref.watch(currentMasjidProvider);
@@ -61,22 +36,24 @@ class _HomePrayerWidgetMuadhinScreenState
         : ref.watch(prayerTimesProvider(
             PrayerTimesArg(date: now, masjidId: masjid.id)));
 
+    // Cache O(N) lookups — called once, reused below.
+    final currentPrayer = times?.currentAt(now);
+    final nextPrayer = times?.nextAt(now);
+
     // Derive next prayer data
     final remaining = times?.toNextAt(now) ?? Duration.zero;
-    final nextPrayer = times?.nextAt(now);
-    final nextPrayerName = nextPrayer != null ? _prayerLabel(nextPrayer) : '—';
+    final nextPrayerName = nextPrayer != null ? prayerLabel(nextPrayer) : '—';
 
     // from/to for CurrentPrayerCard: current prayer start → next prayer start
     String fromTime = '—';
     String toTime = '—';
-    if (times != null && nextPrayer != null) {
-      final currentPrayer = times.currentAt(now);
-      fromTime = _formatTime(times.times[currentPrayer]);
-      toTime = _formatTime(times.times[nextPrayer]);
+    if (times != null && currentPrayer != null && nextPrayer != null) {
+      fromTime = formatPrayerTime(times.times[currentPrayer]);
+      toTime = formatPrayerTime(times.times[nextPrayer]);
     }
 
     final currentPrayerCardName =
-        (times != null) ? _prayerLabel(times.currentAt(now)) : '—';
+        currentPrayer != null ? prayerLabel(currentPrayer) : '—';
 
     return Scaffold(
       body: Stack(
@@ -172,7 +149,7 @@ class _HomePrayerWidgetMuadhinScreenState
                   Column(
                     children: [
                       Text(
-                        _formatHHMM(remaining),
+                        formatHHMM(remaining),
                         style: AppTextStyles.numeralTime(
                           fontSize: 64,
                           color: AppColors.onSurface,
