@@ -6,9 +6,9 @@ import '../../../core/icons/material_symbols.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/prayer_format.dart';
 import '../../../core/widgets/bg_pattern.dart';
 import '../../../core/widgets/slide_to_broadcast.dart';
-import '../../../data/models/prayer_times.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
 import '../../../providers/recent_broadcasts_provider.dart';
@@ -104,6 +104,7 @@ class MasjidDashboardScreen extends ConsumerWidget {
                     childAspectRatio: 1.6,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
+                    // TODO(T31): replace hardcoded MVP values with live provider data
                     children: const [
                       KpiTile(
                         label: 'Listeners Today',
@@ -129,7 +130,7 @@ class MasjidDashboardScreen extends ConsumerWidget {
                   // ── Next broadcast hero card ──────────────────────────
                   const SizedBox(height: 24),
                   NextBroadcastCard(
-                    prayerName: _prayerLabel(nextPrayer),
+                    prayerName: prayerLabel(nextPrayer),
                     at: nextAt,
                     onGoLive: () => context.push(RouteNames.goLive),
                   ),
@@ -171,8 +172,4 @@ class MasjidDashboardScreen extends ConsumerWidget {
     );
   }
 
-  static String _prayerLabel(Prayer prayer) {
-    final name = prayer.name;
-    return name[0].toUpperCase() + name.substring(1);
-  }
 }
