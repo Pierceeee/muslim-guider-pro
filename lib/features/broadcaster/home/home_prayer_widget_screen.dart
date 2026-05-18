@@ -15,6 +15,7 @@ import '../../../core/widgets/slide_to_broadcast.dart';
 import '../../../core/widgets/time_date_stack.dart';
 import '../../../providers/current_masjid_provider.dart';
 import '../../../providers/prayer_times_provider.dart';
+import '../../../providers/qibla_direction_provider.dart';
 import 'widgets/role_badge.dart';
 
 class HomePrayerWidgetMuadhinScreen extends ConsumerStatefulWidget {
@@ -30,6 +31,10 @@ class _HomePrayerWidgetMuadhinScreenState
   @override
   Widget build(BuildContext context) {
     final masjid = ref.watch(currentMasjidProvider);
+    final qibla = ref.watch(qiblaDirectionProvider((
+      lat: masjid?.latitude ?? 21.4225,
+      lng: masjid?.longitude ?? 39.8262,
+    )));
     final now = DateTime.now();
     final times = masjid == null
         ? null
@@ -105,8 +110,14 @@ class _HomePrayerWidgetMuadhinScreenState
                     clipBehavior: Clip.none,
                     children: [
                       // Prayer circle — centred
-                      const Center(
-                        child: PrayerWidget(size: 340, qiblaAngleDeg: 35),
+                      Center(
+                        child: PrayerWidget(
+                          size: 340,
+                          qiblaAngleDeg: qibla.maybeWhen(
+                            data: (d) => d,
+                            orElse: () => 35.0,
+                          ),
+                        ),
                       ),
                       // Floating left tag (overflows above)
                       Positioned(
