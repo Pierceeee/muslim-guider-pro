@@ -1,6 +1,16 @@
 enum StreamStatus { starting, live, ended, failed }
 enum EndReason { normal, network, killedByAdmin, error }
 
+extension _StreamStatusX on StreamStatus {
+  static StreamStatus fromName(String name) =>
+      StreamStatus.values.firstWhere((e) => e.name == name);
+}
+
+extension _EndReasonX on EndReason {
+  static EndReason fromName(String name) =>
+      EndReason.values.firstWhere((e) => e.name == name);
+}
+
 class BroadcastStream {
   const BroadcastStream({
     required this.id,
@@ -50,6 +60,35 @@ class BroadcastStream {
       endReason: endReason ?? this.endReason,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'masjidId': masjidId,
+        'muadhinId': muadhinId,
+        'startedAt': startedAt.toIso8601String(),
+        'endedAt': endedAt?.toIso8601String(),
+        'peakListenerCount': peakListenerCount,
+        'currentListenerCount': currentListenerCount,
+        'status': status.name,
+        'endReason': endReason?.name,
+      };
+
+  factory BroadcastStream.fromJson(Map<String, dynamic> json) =>
+      BroadcastStream(
+        id: json['id'] as String,
+        masjidId: json['masjidId'] as String,
+        muadhinId: json['muadhinId'] as String,
+        startedAt: DateTime.parse(json['startedAt'] as String),
+        endedAt: json['endedAt'] != null
+            ? DateTime.parse(json['endedAt'] as String)
+            : null,
+        peakListenerCount: json['peakListenerCount'] as int,
+        currentListenerCount: json['currentListenerCount'] as int,
+        status: _StreamStatusX.fromName(json['status'] as String),
+        endReason: json['endReason'] != null
+            ? _EndReasonX.fromName(json['endReason'] as String)
+            : null,
+      );
 
   @override
   bool operator ==(Object other) =>
