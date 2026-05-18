@@ -18,9 +18,12 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_schedule_repositor
 import 'package:muslim_guider_pro/core/widgets/big_red_broadcast_button.dart';
 import 'package:muslim_guider_pro/core/widgets/slide_to_broadcast.dart';
 import 'package:muslim_guider_pro/core/widgets/live_banner.dart';
+import 'package:muslim_guider_pro/providers/audio_recorder_provider.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
 import 'package:muslim_guider_pro/providers/mic_level_stream_provider.dart';
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
+
+import '../_helpers/fake_audio_recorder.dart';
 
 void main() {
   testWidgets('Muadhin completes the broadcast loop end to end', (tester) async {
@@ -29,6 +32,7 @@ void main() {
       masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
       broadcastRepositoryProvider.overrideWithValue(MockBroadcastRepository()),
       scheduleRepositoryProvider.overrideWithValue(MockScheduleRepository()),
+      audioRecorderRepositoryProvider.overrideWithValue(FakeAudioRecorder()),
       // Override with empty stream to avoid the infinite sine-wave timer leaking
       // across test teardown.
       micLevelProvider.overrideWith((_) => Stream<double>.empty()),

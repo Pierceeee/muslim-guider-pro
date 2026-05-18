@@ -8,9 +8,12 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_auth_repository.da
 import 'package:muslim_guider_pro/data/repositories/mock/mock_broadcast_repository.dart';
 import 'package:muslim_guider_pro/data/repositories/mock/mock_masjid_repository.dart';
 import 'package:muslim_guider_pro/features/broadcaster/live/live_broadcast_screen.dart';
+import 'package:muslim_guider_pro/providers/audio_recorder_provider.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
 import 'package:muslim_guider_pro/providers/mic_level_stream_provider.dart';
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
+
+import '../../../_helpers/fake_audio_recorder.dart';
 
 void main() {
   testWidgets('Live screen shows LiveBanner, AudioWaveform, MicLevelMeter, and action buttons',
@@ -26,6 +29,7 @@ void main() {
         authRepositoryProvider.overrideWithValue(auth),
         masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
         broadcastRepositoryProvider.overrideWithValue(broadcast),
+        audioRecorderRepositoryProvider.overrideWithValue(FakeAudioRecorder()),
         // Override micLevelProvider with a never-emitting stream to
         // avoid the sine fallback's pending async timer leaking after dispose.
         micLevelProvider.overrideWith((_) => const Stream<double>.empty()),

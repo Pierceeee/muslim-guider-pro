@@ -6,6 +6,8 @@ import 'data/repositories/mock/mock_auth_repository.dart';
 import 'data/repositories/mock/mock_broadcast_repository.dart';
 import 'data/repositories/mock/mock_masjid_repository.dart';
 import 'data/repositories/mock/mock_schedule_repository.dart';
+import 'data/repositories/real/real_audio_recorder.dart';
+import 'providers/audio_recorder_provider.dart';
 import 'providers/repository_providers.dart';
 
 void main() {
@@ -16,6 +18,7 @@ void main() {
       masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
       broadcastRepositoryProvider.overrideWithValue(MockBroadcastRepository()),
       scheduleRepositoryProvider.overrideWithValue(MockScheduleRepository()),
+      audioRecorderRepositoryProvider.overrideWithValue(RealAudioRecorder()),
     ],
     child: const MuslimGuiderProApp(),
   ));

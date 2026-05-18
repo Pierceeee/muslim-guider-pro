@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:muslim_guider_pro/providers/audio_recorder_provider.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
+
+import '../_helpers/fake_audio_recorder.dart';
 
 void main() {
   test('Fallback sine emits values between 0 and 1', () async {
     final container = ProviderContainer(overrides: [
       useFallbackMicProvider.overrideWithValue(true),
+      audioRecorderRepositoryProvider.overrideWithValue(FakeAudioRecorder()),
     ]);
     addTearDown(container.dispose);
     final sub = container.listen<AsyncValue<double>>(micLevelProvider, (p, n) {});
