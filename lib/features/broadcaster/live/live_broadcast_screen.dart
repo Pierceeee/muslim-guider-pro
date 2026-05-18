@@ -270,6 +270,8 @@ class LiveBroadcastScreen extends ConsumerWidget {
                             ref
                                 .read(broadcastRepositoryProvider)
                                 .endBroadcast(streamId, EndReason.normal);
+                            // NOTE(T30): when endBroadcast becomes async, ensure context.mounted is
+                            // re-checked AFTER the await — not before. Sync call today, async tomorrow.
                             if (!context.mounted) return;
                             context.pushReplacement(
                                 '${RouteNames.summaryPath}/$streamId');

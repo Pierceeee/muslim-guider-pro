@@ -9,6 +9,7 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_broadcast_reposito
 import 'package:muslim_guider_pro/data/repositories/mock/mock_masjid_repository.dart';
 import 'package:muslim_guider_pro/features/broadcaster/live/live_broadcast_screen.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
+import 'package:muslim_guider_pro/providers/mic_level_stream_provider.dart';
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
 
 void main() {
@@ -28,6 +29,9 @@ void main() {
         // Override micLevelProvider with a never-emitting stream to
         // avoid the sine fallback's pending async timer leaking after dispose.
         micLevelProvider.overrideWith((_) => const Stream<double>.empty()),
+        // Override micLevelStreamProvider so AudioWaveform's internal
+        // StreamSubscription is sealed before test teardown.
+        micLevelStreamProvider.overrideWith((_) => const Stream<double>.empty()),
       ],
       child: MaterialApp(home: LiveBroadcastScreen(streamId: stream.id)),
     ));
