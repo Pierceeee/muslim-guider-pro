@@ -9,10 +9,12 @@ class NextBroadcastCard extends StatelessWidget {
     super.key,
     required this.prayerName,
     required this.at,
+    this.onGoLive,
   });
 
   final String prayerName;
   final DateTime at;
+  final VoidCallback? onGoLive;
 
   String _countdownStr() {
     final diff = at.difference(DateTime.now());
@@ -64,23 +66,27 @@ class NextBroadcastCard extends StatelessWidget {
             ),
           ),
           // CTA pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.onPrimaryFixed,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Go Live now',
-                  style: AppTextStyles.labelCaps(color: Colors.white)
-                      .copyWith(fontSize: 12),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Symbols.chevron_right, color: Colors.white, size: 16),
-              ],
+          InkWell(
+            onTap: onGoLive,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.onPrimaryFixed,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Go Live now',
+                    style: AppTextStyles.labelCaps(color: Colors.white)
+                        .copyWith(fontSize: 12),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Symbols.chevron_right, color: Colors.white, size: 16),
+                ],
+              ),
             ),
           ),
         ],
