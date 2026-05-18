@@ -34,6 +34,9 @@ class RealAudioRecorder implements AudioRecorderRepository {
   Future<String?> stopRecording() => _rec.stop();
 
   @override
+  Future<void> dispose() => _rec.dispose();
+
+  @override
   Stream<double> get amplitudeStream =>
       _rec
           .onAmplitudeChanged(const Duration(milliseconds: 100))

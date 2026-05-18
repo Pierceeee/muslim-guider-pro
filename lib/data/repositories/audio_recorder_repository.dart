@@ -15,4 +15,8 @@ abstract class AudioRecorderRepository {
 
   /// Live amplitude stream — values normalized to [0..1] from dBFS.
   Stream<double> get amplitudeStream;
+
+  /// Releases any native resources (mic handle, internal streams).
+  /// Safe to call multiple times — implementations must be idempotent.
+  Future<void> dispose();
 }

@@ -18,7 +18,11 @@ void main() {
       masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
       broadcastRepositoryProvider.overrideWithValue(MockBroadcastRepository()),
       scheduleRepositoryProvider.overrideWithValue(MockScheduleRepository()),
-      audioRecorderRepositoryProvider.overrideWithValue(RealAudioRecorder()),
+      audioRecorderRepositoryProvider.overrideWith((ref) {
+        final recorder = RealAudioRecorder();
+        ref.onDispose(() => recorder.dispose());
+        return recorder;
+      }),
     ],
     child: const MuslimGuiderProApp(),
   ));

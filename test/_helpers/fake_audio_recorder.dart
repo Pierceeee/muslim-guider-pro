@@ -20,4 +20,7 @@ class FakeAudioRecorder implements AudioRecorderRepository {
 
   @override
   Stream<double> get amplitudeStream => const Stream.empty();
+
+  @override
+  Future<void> dispose() async {}
 }
