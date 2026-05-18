@@ -125,10 +125,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Step 11: Summary screen.
-    expect(find.text('Broadcast Ended'), findsOneWidget);
+    expect(find.text('Broadcast complete ✓'), findsOneWidget);
 
-    // Step 12: Done â†' back on Dashboard.
-    await tester.tap(find.text('Done'));
+    // Step 12: Save & finish → back on Dashboard.
+    // The summary screen is scrollable; scroll the button into view first.
+    await tester.ensureVisible(find.text('Save & finish'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save & finish'));
     await tester.pump(); // flush microtasks
     await tester.pump(); // second frame
     // Dashboard re-loads currentMasjidProvider â€" pump for stream to emit.
