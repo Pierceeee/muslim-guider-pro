@@ -113,6 +113,7 @@ class _BroadcastSummaryScreenState
                           children: [
                             KpiTile(
                               label: 'Listeners reached',
+                              // TODO(T31): differentiate from peak — use totalUniqueListeners when available
                               value: stream.peakListenerCount.toString(),
                             ),
                             const KpiTile(
