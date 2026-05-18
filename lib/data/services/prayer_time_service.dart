@@ -14,6 +14,7 @@ class PrayerTimeService {
   }) {
     try {
       final coords = adhan.Coordinates(latitude, longitude);
+      // TODO(future): make calculation method + madhab per-masjid configurable.
       final params = adhan.CalculationMethodParameters.muslimWorldLeague();
       params.madhab = adhan.Madhab.shafi;
       final pt = adhan.PrayerTimes(

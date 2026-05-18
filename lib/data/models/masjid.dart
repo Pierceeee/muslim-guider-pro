@@ -4,7 +4,9 @@ class Masjid {
     required this.name,
     required this.city,
     required this.authorisedMuadhinIds,
+    /// NOTE: defaults to Mecca (21.4225, 39.8262); always supply real coordinates for production data.
     this.latitude = 21.4225,
+    /// NOTE: defaults to Mecca (21.4225, 39.8262); always supply real coordinates for production data.
     this.longitude = 39.8262,
     this.heroImageUrl,
     this.isBroadcasting = false,

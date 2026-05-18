@@ -24,7 +24,7 @@ Future<void> main() async {
       }),
       scheduleRepositoryProvider.overrideWith((ref) => RealScheduleRepository(
             PrayerTimeService(),
-            MockMasjidRepository(),
+            ref.read(masjidRepositoryProvider),
           )),
       audioRecorderRepositoryProvider.overrideWith((ref) {
         final recorder = RealAudioRecorder();
