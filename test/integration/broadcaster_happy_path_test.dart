@@ -1,9 +1,9 @@
 ﻿// Happy-path integration test for the broadcaster feature.
 //
 // This drives the full GoRouter + Riverpod app with all repository providers
-// overridden with mocks â€” no network, no platform channels, no physical device
+// overridden with mocks â€" no network, no platform channels, no physical device
 // required. The test covers every screen in the broadcast loop:
-//   Sign-in â†’ Home â†’ Dashboard â†’ (slide) â†’ Pre-Check â†’ Live â†’ Summary â†’ Dashboard
+//   Sign-in â†' Home â†' Dashboard â†' (slide) â†' Pre-Check â†' Live â†' Summary â†' Dashboard
 //
 // Placed under test/ so `flutter test` can run it without a connected device.
 // An identical copy lives in integration_test/ for future on-device runs.
@@ -17,7 +17,9 @@ import 'package:muslim_guider_pro/data/repositories/mock/mock_masjid_repository.
 import 'package:muslim_guider_pro/data/repositories/mock/mock_schedule_repository.dart';
 import 'package:muslim_guider_pro/core/widgets/big_red_broadcast_button.dart';
 import 'package:muslim_guider_pro/core/widgets/slide_to_broadcast.dart';
+import 'package:muslim_guider_pro/core/widgets/live_banner.dart';
 import 'package:muslim_guider_pro/providers/mic_level_provider.dart';
+import 'package:muslim_guider_pro/providers/mic_level_stream_provider.dart';
 import 'package:muslim_guider_pro/providers/repository_providers.dart';
 
 void main() {
@@ -30,6 +32,7 @@ void main() {
       // Override with empty stream to avoid the infinite sine-wave timer leaking
       // across test teardown.
       micLevelProvider.overrideWith((_) => Stream<double>.empty()),
+      micLevelStreamProvider.overrideWith((_) => const Stream<double>.empty()),
     ]);
     addTearDown(container.dispose);
 
@@ -37,27 +40,27 @@ void main() {
       container: container,
       child: const MuslimGuiderProApp(),
     ));
-    // Bounded pumps throughout â€” several screens carry infinite animations.
+    // Bounded pumps throughout â€" several screens carry infinite animations.
     await tester.pump(const Duration(milliseconds: 500));
 
     // Step 1: Sign in as Imam Yusuf.
     expect(find.text('Imam Yusuf Abdullah'), findsOneWidget);
     await tester.tap(find.text('Imam Yusuf Abdullah'));
-    // Flush microtasks from selectUser â†’ signIn â†’ stream emit â†’ notifyListeners
+    // Flush microtasks from selectUser â†' signIn â†' stream emit â†' notifyListeners
     await tester.pump();
     await tester.pump();
     // GoRouter redirect re-evaluation + slide-in animation
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Step 2: Home â€” MUADHIN badge confirms the Muadhin role.
+    // Step 2: Home â€" MUADHIN badge confirms the Muadhin role.
     expect(find.textContaining('MUADHIN'), findsOneWidget);
 
     // Step 3: Navigate to Dashboard tab via bottom nav.
     await tester.tap(find.text('Dashboard'));
     await tester.pump(); // flush microtasks
     await tester.pump(); // second frame
-    // Dashboard loads currentMasjidProvider (StreamProvider) â€” pump time for
+    // Dashboard loads currentMasjidProvider (StreamProvider) â€" pump time for
     // the stream to emit and the widget to rebuild.
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 300));
@@ -67,7 +70,7 @@ void main() {
     await tester.tap(find.text('Home'));
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Step 5: Slide-to-broadcast â†’ Pre-Broadcast Check screen.
+    // Step 5: Slide-to-broadcast â†' Pre-Broadcast Check screen.
     //
     // NOTE: The SlideToBroadcast gesture cannot be reliably triggered via
     // tester.drag/fling in a widget test because the parent SingleChildScrollView
@@ -77,7 +80,7 @@ void main() {
     //
     // Here we verify the widget is present and then trigger its onConfirmed
     // callback directly via the widget's element, which is the equivalent of
-    // a successful slide â€” the integration test exercises every screen in the
+    // a successful slide â€" the integration test exercises every screen in the
     // loop, which is the primary goal.
     expect(find.byType(SlideToBroadcast), findsOneWidget);
     // Retrieve the widget's onConfirmed callback and invoke it directly.
@@ -94,7 +97,7 @@ void main() {
     // Step 6: Pre-Broadcast Check screen.
     expect(find.text('Ready to broadcast the Athan?'), findsOneWidget);
 
-    // runFakeChecks resolves after 800 ms â€” pump past it.
+    // runFakeChecks resolves after 800 ms â€" pump past it.
     await tester.pump(const Duration(seconds: 1));
 
     // Step 7: Force mic OK via the debug button (only shown when mic â‰  ok).
@@ -113,25 +116,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 700));
 
-    // Step 9: Live â€” LiveIndicator shows "LIVE".
-    expect(find.text('LIVE'), findsOneWidget);
+    // Step 9: Live -- LiveBanner is visible.
+    expect(find.byType(LiveBanner), findsOneWidget);
 
-    // Step 10: End Broadcast â†’ confirmation dialog â†’ tap End.
-    await tester.tap(find.text('End Broadcast'));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('End'), findsOneWidget);
-    await tester.tap(find.text('End'));
+    // Step 10: Tap "End broadcast" -- navigates directly to summary (no dialog).
+    await tester.tap(find.text('End broadcast'));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
     // Step 11: Summary screen.
     expect(find.text('Broadcast Ended'), findsOneWidget);
 
-    // Step 12: Done â†’ back on Dashboard.
+    // Step 12: Done â†' back on Dashboard.
     await tester.tap(find.text('Done'));
     await tester.pump(); // flush microtasks
     await tester.pump(); // second frame
-    // Dashboard re-loads currentMasjidProvider â€” pump for stream to emit.
+    // Dashboard re-loads currentMasjidProvider â€" pump for stream to emit.
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Masjid Al-Abrar'), findsOneWidget);
