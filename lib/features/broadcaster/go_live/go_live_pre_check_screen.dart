@@ -27,6 +27,8 @@ class GoLivePreCheckScreen extends ConsumerStatefulWidget {
 }
 
 class _GoLivePreCheckScreenState extends ConsumerState<GoLivePreCheckScreen> {
+  // TODO(T31): forward to BroadcastRepository.startBroadcast when the
+  // repository is upgraded with real persistence in Task 31.
   bool _autoArchive = true;
   bool _notifySubscribers = true;
 
@@ -274,6 +276,7 @@ class _GoLivePreCheckScreenState extends ConsumerState<GoLivePreCheckScreen> {
                       ),
                       const SizedBox(height: 12),
 
+                      // TODO(T31): derive from current prayer + DateFormat(...).
                       // Broadcast label field
                       Container(
                         padding: const EdgeInsets.symmetric(
