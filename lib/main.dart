@@ -17,7 +17,10 @@ Future<void> main() async {
     overrides: [
       authRepositoryProvider.overrideWithValue(MockAuthRepository()),
       masjidRepositoryProvider.overrideWithValue(MockMasjidRepository()),
-      broadcastRepositoryProvider.overrideWithValue(realBroadcastRepo),
+      broadcastRepositoryProvider.overrideWith((ref) {
+        ref.onDispose(() => realBroadcastRepo.dispose());
+        return realBroadcastRepo;
+      }),
       scheduleRepositoryProvider.overrideWithValue(MockScheduleRepository()),
       audioRecorderRepositoryProvider.overrideWith((ref) {
         final recorder = RealAudioRecorder();

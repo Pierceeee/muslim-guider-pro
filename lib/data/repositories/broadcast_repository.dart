@@ -9,4 +9,8 @@ abstract class BroadcastRepository {
     required String muadhinId,
   });
   BroadcastStream endBroadcast(String streamId, EndReason reason);
+
+  /// Releases any held resources (open [StreamController]s, pending I/O).
+  /// Safe to call multiple times — implementations must be idempotent.
+  Future<void> dispose();
 }

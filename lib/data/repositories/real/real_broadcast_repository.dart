@@ -14,6 +14,8 @@ class RealBroadcastRepository implements BroadcastRepository {
   final Map<String, BroadcastStream?> _liveByMasjid = {};
   final Map<String, StreamController<BroadcastStream?>> _watchers = {};
 
+  Future<void>? _pendingPersist;
+
   static Future<RealBroadcastRepository> create() async {
     final prefs = await SharedPreferences.getInstance();
     final cache = <String, List<BroadcastStream>>{};
@@ -33,11 +35,32 @@ class RealBroadcastRepository implements BroadcastRepository {
   }
 
   Future<void> _persist(String masjidId) async {
-    final list = _cache[masjidId] ?? [];
-    await _prefs.setString(
-      'broadcasts_$masjidId',
-      jsonEncode(list.map((b) => b.toJson()).toList()),
-    );
+    final list = _cache[masjidId] ?? const <BroadcastStream>[];
+    final encoded = jsonEncode(list.map((b) => b.toJson()).toList());
+    if (_pendingPersist == null) {
+      // No prior write in flight — execute immediately (no extra microtask hop).
+      final write = _prefs.setString('broadcasts_$masjidId', encoded);
+      _pendingPersist = write;
+      await write;
+    } else {
+      // Chain behind the prior write so they land in order.
+      final next = _pendingPersist!.then((_) async {
+        await _prefs.setString('broadcasts_$masjidId', encoded);
+      });
+      _pendingPersist = next;
+      await next;
+    }
+  }
+
+  /// Closes all watcher [StreamController]s and awaits any pending persist.
+  /// Safe to call multiple times.
+  @override
+  Future<void> dispose() async {
+    for (final controller in _watchers.values) {
+      await controller.close();
+    }
+    _watchers.clear();
+    await (_pendingPersist ?? Future.value());
   }
 
   StreamController<BroadcastStream?> _watcher(String masjidId) {

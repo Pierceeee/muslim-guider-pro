@@ -82,8 +82,8 @@ class BroadcastStream {
         endedAt: json['endedAt'] != null
             ? DateTime.parse(json['endedAt'] as String)
             : null,
-        peakListenerCount: json['peakListenerCount'] as int,
-        currentListenerCount: json['currentListenerCount'] as int,
+        peakListenerCount: (json['peakListenerCount'] as num?)?.toInt() ?? 0,
+        currentListenerCount: (json['currentListenerCount'] as num?)?.toInt() ?? 0,
         status: _StreamStatusX.fromName(json['status'] as String),
         endReason: json['endReason'] != null
             ? _EndReasonX.fromName(json['endReason'] as String)

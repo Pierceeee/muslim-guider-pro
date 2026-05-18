@@ -76,4 +76,8 @@ class MockBroadcastRepository implements BroadcastRepository {
     _watcher(existing.masjidId).add(null);
     return ended;
   }
+
+  @override
+  Future<void> dispose() async {}
 }
+
