@@ -16,6 +16,8 @@ void main() {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(body: MicLevelMeter(level0to1: 0.5, barCount: 8)),
     ));
+    // REVIEW(T34): consider expanding — structural type check + label only;
+    // does not verify bar count or active-segment coloring.
     expect(find.byType(MicLevelMeter), findsOneWidget);
     expect(find.text('MIC INPUT LEVEL'), findsOneWidget);
   });

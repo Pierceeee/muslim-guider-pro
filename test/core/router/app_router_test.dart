@@ -51,6 +51,8 @@ void main() {
     final auth = MockAuthRepository();
     await auth.signIn('u_aisha');
     await pumpApp(tester, auth);
+    // REVIEW(T34): consider expanding — only checks presence of heading text;
+    // does not verify bottom nav items or role-specific widgets on the page.
     expect(find.textContaining('Listener experience'), findsOneWidget);
   });
 }
