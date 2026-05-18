@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'data/repositories/mock/mock_auth_repository.dart';
 import 'data/repositories/mock/mock_masjid_repository.dart';
-import 'data/repositories/mock/mock_schedule_repository.dart';
 import 'data/repositories/real/real_audio_recorder.dart';
 import 'data/repositories/real/real_broadcast_repository.dart';
+import 'data/repositories/real/real_schedule_repository.dart';
+import 'data/services/prayer_time_service.dart';
 import 'providers/audio_recorder_provider.dart';
 import 'providers/repository_providers.dart';
 
@@ -21,7 +22,10 @@ Future<void> main() async {
         ref.onDispose(() => realBroadcastRepo.dispose());
         return realBroadcastRepo;
       }),
-      scheduleRepositoryProvider.overrideWithValue(MockScheduleRepository()),
+      scheduleRepositoryProvider.overrideWith((ref) => RealScheduleRepository(
+            PrayerTimeService(),
+            MockMasjidRepository(),
+          )),
       audioRecorderRepositoryProvider.overrideWith((ref) {
         final recorder = RealAudioRecorder();
         ref.onDispose(() => recorder.dispose());
